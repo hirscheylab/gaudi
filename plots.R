@@ -4,9 +4,16 @@ library(xgboost)
 library(SHAPforxgboost)
 
 out <- readRDS(file = "/Users/pol/Dropbox/compare_clusters/clone/results_target/target_ubmi_factorization.Rds")
+factors <- out$factorizations[[1]][[1]]
+clusters <- paste0("Cluster ", out$UBMI.clusters)
+
+# load("/Users/pol/Dropbox/compare_clusters/clone/results20221114222238/results_clusters/survival_clusters.RData")
+# out <- readRDS(file = "/Users/pol/Dropbox/compare_clusters/clone/results20221114222238/amlresults_out.Rds")
+# factors <- out$factorizations[[7]][[1]]
+# clusters <- paste0("Cluster ", out_clust_surv$aml$UBMI)
 
 # UBMI Scatterplot
-ubmi <- data.frame(out$factorizations[[1]][[1]], clust = paste0("Cluster ", out$UBMI.clusters)) %>%
+ubmi <- data.frame(factors, clust = clusters) %>%
   # filter(clust != "Cluster 0") %>%
   # filter(clust %in% c("Cluster 6", "Cluster 7")) %>%
   filter(!clust %in% c("Cluster 0", "Cluster 1")) %>%
@@ -29,7 +36,7 @@ mod <- xgboost::xgboost(data = dataX[rownames(dataX) %in% ubmi$id, ],
 
 # To return the SHAP values and ranked features by mean|SHAP|
 shap_values <- shap.values(xgb_model = mod, X_train = dataX[rownames(dataX) %in% ubmi$id, ])
-top_features <- 20
+top_features <- 10
 
 # The ranked features by mean |SHAP|
 shap_contrib <- shap_values$shap_score
@@ -43,20 +50,12 @@ shap_values_nonzero_long <- shap_values_nonzero %>%
   pivot_longer(cols = -c(id, clust)) %>%
   mutate(feature = case_when(name %in% ranked_col[1:top_features] ~ name,
                              !(name %in% ranked_col[1:top_features]) ~ "other"))
-  
-
-
 
 colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$feature)) - 1)
 names(colors_raw) <- unique(shap_values_nonzero_long$feature)[unique(shap_values_nonzero_long$feature) != "other"]
 other_color <- "gray80"
 names(other_color) <- "other"
 manual_colors <- c(colors_raw, other_color)
-
-
-
-
-
 
 ggplot(shap_values_nonzero_long, aes(reorder(id, as.numeric(gsub("Cluster ", "", clust))), value, fill = feature)) +
   geom_col() +
@@ -68,7 +67,6 @@ ggplot(shap_values_nonzero_long, aes(reorder(id, as.numeric(gsub("Cluster ", "",
         panel.grid.major = element_blank()) +
   scale_fill_manual(values = manual_colors)
 
-
 ggplot(shap_values_nonzero_long, aes(reorder(id, as.numeric(gsub("Cluster ", "", clust))), value, fill = clust)) +
   geom_col() +
   geom_hline(yintercept = 0) +
@@ -79,11 +77,4 @@ ggplot(shap_values_nonzero_long, aes(reorder(id, as.numeric(gsub("Cluster ", "",
         panel.grid.major = element_blank()) +
   scale_fill_manual(values = ggsci::pal_npg()(length(unique(shap_values_nonzero_long$clust))))
 
-
-
-
-
-
-
-
-                                  
+                     
