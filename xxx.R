@@ -89,16 +89,77 @@ ubmi <- function(omics,
 test_ubmi <- ubmi(omics, 
                   umap_params = list(n_neighbors = 15, n_components = 4, pca = 50),
                   umap_params_conc = list(n_neighbors = 15, n_components = 2),
-                  min_pts = 5,
+                  min_pts = 10,
                   xgboost_params = list())
 
-test_ubmi$factorizations[[1]] #factors
-test_ubmi$metagenes[[1]][[1]][[1]] #metagens
-test_ubmi$metagenes[[1]][[1]][[2]] #ranks
+##
 
+plot_metagenes <- function(object,
+                           component = 1,
+                           top = 10,
+                           clusters = FALSE,
+                           ...) {
+  
+  factors <- object$factorizations[[1]]
+  
+  if(component == 1) {
+    metagenes <- object$metagenes[[1]][[1]][[1]]
+    ranks <- object$metagenes[[1]][[1]][[2]]
+  } else {
+    metagenes <- object$metagenes[[1]][[2]][[1]]
+    ranks <- object$metagenes[[1]][[1]][[2]] 
+  }
+  
+  shap_values_nonzero_long <- metagenes %>% 
+    mutate(id = rownames(factors), clust = as.factor(factors$clust)) %>% 
+    pivot_longer(cols = -c(id, clust)) %>%
+    mutate(feature = case_when(name %in% ranks[1:top] ~ name,
+                               !(name %in% ranks[1:top]) ~ "other"))
+  
+  colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$feature)) - 1)
+  names(colors_raw) <- unique(shap_values_nonzero_long$feature)[unique(shap_values_nonzero_long$feature) != "other"]
+  other_color <- "gray80"
+  names(other_color) <- "other"
+  manual_colors <- c(colors_raw, other_color)
+    
+  ggplot(shap_values_nonzero_long) +
+    {if(!clusters) geom_col(aes(reorder(id, as.numeric(clust)), value, fill = feature))} +
+    {if(clusters) geom_col(aes(reorder(id, as.numeric(clust)), value, fill = clust))} +
+    geom_hline(yintercept = 0) +
+    theme_bw() +
+    theme(axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          panel.grid.major = element_blank()) +
+    {if(!clusters) scale_fill_manual(values = manual_colors)} +
+    {if(clusters) scale_fill_manual(values = ggsci::pal_npg()(length(table(shap_values_nonzero_long$clust))))} +
+    NULL
+}
 
+library(patchwork)
 
+aa <- plot_metagenes(test_ubmi)
+bb <- plot_metagenes(test_ubmi, component = 2)
 
+aa / bb
 
+(cc <- plot_metagenes(test_ubmi, clusters = TRUE))
 
+##
+
+plot_factors <- function(object,
+                         ...) {
+  
+  factors <- object$factorizations[[1]]
+
+  ggplot(factors, aes(UMAP1, UMAP2, fill = as.factor(clust))) +
+    geom_point(pch = 21, size = 3, alpha = 0.8, color = "black") +
+    theme_bw() +
+    scale_fill_manual(values = ggsci::pal_npg()(length(table(factors$clust))))
+}
+
+(dd <- plot_factors(test_ubmi))
+
+##
+
+(dd/cc) | (aa/bb)
 
