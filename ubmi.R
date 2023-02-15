@@ -3,59 +3,19 @@ library(uwot)
 
 folder <- "/Users/pol/Dropbox/compare_clusters/data/cancer/aml/"
 file.names = c("log_exp", "methy", "log_mirna")
-filtering = "none"
-neighbors_conc <- NULL
-num_fact_conc <- NULL
-min_dist_conc <- NULL
-spread_conc <- NULL
 
 omics <- list()
 for (i in 1:length(file.names)){
   omics[[i]] <- as.matrix(read.table(paste(folder, file.names[i], sep = "/"), sep = " ", row.names = 1, header = T))
 }
-##restricting to common samples and filtering
-samples <- colnames(omics[[1]])
-for (j in 1:length(omics)) {
-  samples <- intersect(samples,colnames(omics[[j]]))
-}
-for (j in 1:length(omics)) {
-  omics[[j]] <- omics[[j]][,samples]
-  if (filtering != "none") {
-    x <- apply(omics[[j]], 1, sd)
-    x <- as.matrix(sort(x, decreasing = T))
-    w <- which(x > 0)
-    if (filtering == "stringent") {
-      selected <- rownames(x)[1:min(w[length(w)],5000)]
-    } else {
-      selected <- rownames(x)[1:min(w[length(w)],6000)]
-    }
-    m <- match(rownames(omics[[j]]), selected)
-    w <- which(!is.na(m))
-    omics[[j]] <- omics[[j]][w,]
-  } else {
-    omics[[j]] <- omics[[j]][, which(apply(omics[[j]], 2, sd) > 0)]
-  }
-}
 
-####
 
-min_dist_indv <- 0.01
-num.factors <- 2
-pca_ubmi <- 50
 
-umap_factor <- function(x) {
-  umap_neighbors <- floor(sqrt(nrow(t(x))))
-  factorization <- uwot::umap(t(x), 
-                              n_neighbors = umap_neighbors, 
-                              n_components = num.factors, 
-                              pca = pca_ubmi,
-                              min_dist = min_dist_indv)
-  factorization <- as.data.frame(factorization)
-  return(factorization)
-}
 
-factorizations_umap <- lapply(omics, function(x) umap_factor(x))
-concatenated_embeddings <- dplyr::bind_cols(factorizations_umap)
+
+
+
+
 
 if (is.null(num_fact_conc)) {
   num_fact_conc <- num.factors
@@ -70,11 +30,6 @@ if (is.null(spread_conc)) {
   spread_conc <- 1 # uwot default
 }
 
-concatenated_umap <- uwot::umap(concatenated_embeddings, 
-                                n_neighbors = neighbors_conc, 
-                                n_components = num_fact_conc,
-                                min_dist = min_dist_conc,
-                                spread = spread_conc)
 
 ####
 library(xgboost)

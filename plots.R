@@ -46,6 +46,8 @@ shap_values_df <- data.frame(shap_values$shap_score)
 shap_values_nonzero <- data.frame(id = ubmi$id, clust = ubmi$clust,
                                   shap_values_df[, apply(shap_values_df, 2, function(x) !all(x == 0, na.rm = TRUE))])
 
+#########
+
 shap_values_nonzero_long <- shap_values_nonzero %>% 
   pivot_longer(cols = -c(id, clust)) %>%
   mutate(feature = case_when(name %in% ranked_col[1:top_features] ~ name,
