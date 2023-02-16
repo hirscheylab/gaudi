@@ -109,6 +109,8 @@ test_ubmi <- ubmi(omics,
                   min_pts = 10,
                   xgboost_params = list())
 
+# saveRDS(test_ubmi, file = "test_ubmi.Rds")
+
 ##
 
 library(tidyverse)
@@ -190,11 +192,16 @@ plot_factors <- function(object,
 (ee <- plot_factors(test_ubmi, label_size = 4))
 
 ##
+subtitle0 <- "2D mainfold for 170 samples and 26236 features"
+subtitle1 <- "SHAP values of the top features associated to first coordinate (x-axis)"
+subtitle2 <- "SHAP values of the top features associated to second coordinate (y-axis)"
+  
+((ee + labs(subtitle = subtitle0) + theme(legend.position = "bottom")) /
+    ((cc + labs(subtitle = subtitle1) + theme(legend.position = "none")) /
+       (dd + labs(subtitle = subtitle2) + theme(legend.position = "none")))) | 
+  ((aa + labs(subtitle = subtitle1)) / (bb + labs(subtitle = subtitle2)))
 
-((ee + theme(legend.position = "bottom")) /
-    ((cc + ggtitle("Factor 1") + theme(legend.position = "none")) /
-       (dd + ggtitle("Factor 2") + theme(legend.position = "none")))) | 
-  ((aa + ggtitle("Factor 1")) / (bb + ggtitle("Factor 2")))
+# ggsave(filename = "PoC_grid_AML.png", width = 15, height = 9)
 
 ##
 
