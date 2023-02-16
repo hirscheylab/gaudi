@@ -82,8 +82,25 @@ ubmi <- function(omics,
   xgboost_metagenesUMAP2 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP2, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
   message("Metagenes associated with factor 2... OK!")
   
-  return(list(factorizations = list(umap_clusters, umap_factors),
-              metagenes = list(xgboost_metagenesUMAP1, xgboost_metagenesUMAP2)))
+  ubmi_res <- new("UBMIObject",
+                  
+                  factors = umap_clusters,
+                  clusters = umap_clusters$clust,
+                  
+                  single_factors = umap_factors,
+                  
+                  metagenes_factor1 = xgboost_metagenesUMAP1[[1]][[1]],
+                  metagenes_factor1_rank = xgboost_metagenesUMAP1[[1]][[2]],
+                  
+                  metagenes_factor2 = xgboost_metagenesUMAP2[[1]][[1]],
+                  metagenes_factor2_rank = xgboost_metagenesUMAP2[[1]][[2]],
+                  
+                  single_metagenes_factor1 = xgboost_metagenesUMAP1[-1],
+                  single_metagenes_factor2 = xgboost_metagenesUMAP2[-1]
+                  )
+  
+  if(validObject(ubmi_res))
+    return(ubmi_res)
 }
 
 test_ubmi <- ubmi(omics, 
@@ -102,38 +119,41 @@ plot_metagenes <- function(object,
                            clusters = FALSE,
                            ...) {
   
-  factors <- object$factorizations[[1]]
+  factors <- object@factors
   
   if(component == 1) {
-    metagenes <- object$metagenes[[1]][[1]][[1]]
-    ranks <- object$metagenes[[1]][[1]][[2]]
+    metagenes <- object@metagenes_factor1
+    ranks <- object@metagenes_factor1_rank
   } else {
-    metagenes <- object$metagenes[[2]][[1]][[1]]
-    ranks <- object$metagenes[[2]][[1]][[2]] 
+    metagenes <- object@metagenes_factor2
+    ranks <- object@metagenes_factor2_rank
   }
   
   shap_values_nonzero_long <- metagenes %>% 
-    mutate(id = rownames(factors), clust = as.factor(factors$clust)) %>% 
-    pivot_longer(cols = -c(id, clust)) %>%
-    mutate(feature = case_when(name %in% ranks[1:top] ~ name,
-                               !(name %in% ranks[1:top]) ~ "other"))
+    mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
+    pivot_longer(cols = -c(id, Cluster)) %>%
+    mutate(Feature = case_when(name %in% ranks[1:top] ~ name,
+                               !(name %in% ranks[1:top]) ~ "Others"))
   
-  # colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$feature)) - 1)
-  # names(colors_raw) <- unique(shap_values_nonzero_long$feature)[unique(shap_values_nonzero_long$feature) != "other"]
+  # colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$Feature)) - 1)
+  # names(colors_raw) <- unique(shap_values_nonzero_long$Feature)[unique(shap_values_nonzero_long$Feature) != "Others"]
   # other_color <- "gray80"
-  # names(other_color) <- "other"
+  # names(other_color) <- "Others"
   # manual_colors <- c(colors_raw, other_color)
     
   ggplot(shap_values_nonzero_long) +
-    {if(!clusters) geom_col(aes(reorder(id, as.numeric(clust)), value, fill = feature))} +
-    {if(clusters) geom_col(aes(reorder(id, as.numeric(clust)), value, fill = clust))} +
+    {if(!clusters) geom_col(aes(reorder(id, as.numeric(Cluster)), value, fill = Feature))} +
+    {if(clusters) geom_col(aes(reorder(id, as.numeric(Cluster)), value, fill = Cluster))} +
     geom_hline(yintercept = 0) +
+    labs(x = "Samples (Ranked by Cluster)",
+         y = "SHAP Value") +
     theme_bw() +
     theme(axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
           panel.grid.major = element_blank()) +
-    # {if(!clusters) scale_fill_manual(values = manual_colors)} +
-    {if(clusters) scale_fill_manual(values = ggsci::pal_npg()(length(table(shap_values_nonzero_long$clust))))} +
+    {if(!clusters & component == 1) scale_fill_viridis_d()} +
+    {if(!clusters & component != 1) scale_fill_viridis_d(option = "plasma")} +
+    {if(clusters) scale_fill_manual(values = ggsci::pal_npg()(length(table(shap_values_nonzero_long$Cluster))))} +
     NULL
 }
 
@@ -142,28 +162,39 @@ library(patchwork)
 aa <- plot_metagenes(test_ubmi)
 bb <- plot_metagenes(test_ubmi, component = 2)
 
-aa / bb
-
 (cc <- plot_metagenes(test_ubmi, clusters = TRUE))
+(dd <- plot_metagenes(test_ubmi, clusters = TRUE, component = 2))
 
 ##
 
 plot_factors <- function(object,
+                         label_size = 0,
                          ...) {
   
-  factors <- object$factorizations[[1]]
+  factors <- object@factors %>% 
+    mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
+    group_by(Cluster) %>% 
+    mutate(cord1 = median(UMAP1),
+           cord2 = median(UMAP2)) %>% 
+    ungroup()
 
-  ggplot(factors, aes(UMAP1, UMAP2, fill = as.factor(clust))) +
-    geom_point(pch = 21, size = 3, alpha = 0.8, color = "black") +
+  ggplot(factors, aes(UMAP1, UMAP2)) +
+    geom_point(aes(fill = Cluster), pch = 21, size = 3, alpha = 0.8, color = "black") +
     theme_bw() +
-    scale_fill_manual(values = ggsci::pal_npg()(length(table(factors$clust))))
+    {if(label_size != 0) geom_label(data = factors[!duplicated(factors$Cluster),], 
+                                    aes(cord1, cord2, fill = Cluster, label = Cluster),
+                                    show.legend = FALSE, size = label_size)} +
+    scale_fill_manual(values = ggsci::pal_npg()(length(table(factors$Cluster))))
 }
 
-(dd <- plot_factors(test_ubmi))
+(ee <- plot_factors(test_ubmi, label_size = 4))
 
 ##
 
-(dd/cc) | (aa/bb)
+((ee + theme(legend.position = "bottom")) /
+    ((cc + ggtitle("Factor 1") + theme(legend.position = "none")) /
+       (dd + ggtitle("Factor 2") + theme(legend.position = "none")))) | 
+  ((aa + ggtitle("Factor 1")) / (bb + ggtitle("Factor 2")))
 
 ##
 

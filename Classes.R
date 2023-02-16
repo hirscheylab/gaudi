@@ -1,0 +1,23 @@
+setClass("UBMIObject",
+         representation(
+           factors = "data.frame",
+           clusters = "numeric",
+           single_factors = "list",
+           metagenes_factor1 = "data.frame",
+           metagenes_factor1_rank = "character",
+           metagenes_factor2 = "data.frame",
+           metagenes_factor2_rank = "character",
+           single_metagenes_factor1 = "list",
+           single_metagenes_factor2 = "list",
+           ubmiVersion = "character"),
+         prototype(
+           factors = data.frame(),
+           clusters = numeric(),
+           single_factors = list(),
+           metagenes_factor1 = data.frame(),
+           metagenes_factor1_rank = character(),
+           metagenes_factor2 = data.frame(),
+           metagenes_factor2_rank = character(),
+           single_metagenes_factor1 = list(),
+           single_metagenes_factor2 = list(),
+           ubmiVersion = character()))
