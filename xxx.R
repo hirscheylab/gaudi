@@ -55,32 +55,32 @@ ubmi <- function(omics,
   
   omics <- align_omics(omics)
   
-  message("Computing single omic factorizations...")
+  # Factorization
   umap_factors <- lapply(omics, function(x) umap_factorization(umap_params = c(list(X = x), umap_params)))
   concatenated_factors <- list(dplyr::bind_cols(umap_factors, .name_repair = "unique_quiet"))
-  message("Single omic factorizations done!")
+  message("Computing single omics factorizations... OK!")
   
-  message("Computing multi-omics factorization...")
   umap_integrated <- lapply(concatenated_factors, function(x) umap_factorization(umap_params = c(list(X = x), umap_params_conc)))
-  message("Multi-omics factorization done!")
+  message("Computing multi-omics factorization... OK!")
   
-  message("Computing clusters...")
+  # Clustering
   hdbscan_labels <- lapply(umap_integrated, function(x) dbscan::hdbscan(x, minPts = min_pts))[[1]]
   
   umap_clusters <- data.frame(umap_integrated[[1]], clust = hdbscan_labels$cluster)
   colnames(umap_clusters)[1:(ncol(umap_clusters) - 1)] <- paste0("UMAP", 1:(ncol(umap_clusters) - 1))
-  message("Clusters done!")
+  message("Computing multi-omics clusters... OK!")
   
+  # Metagenes
   message("Computing metagenes...")
   features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
   omics <- c(list(features), omics)
     
-  xgboost_fixed_params <- list(objective = "reg:squarederror", eta = 0.02, max_depth = 10, gamma = 0.01, subsample = 0.95)
+  xgboost_fixed_params <- list(objective = "reg:squarederror", lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95)
   
   xgboost_metagenesUMAP1 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP1, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-  message("Factor 1 metagenes done!")
+  message("Metagenes associated with factor 1... OK!")
   xgboost_metagenesUMAP2 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP2, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-  message("Factor 2 metagenes done!")
+  message("Metagenes associated with factor 2... OK!")
   
   return(list(factorizations = list(umap_clusters, umap_factors),
               metagenes = list(xgboost_metagenesUMAP1, xgboost_metagenesUMAP2)))
@@ -94,6 +94,8 @@ test_ubmi <- ubmi(omics,
 
 ##
 
+library(tidyverse)
+
 plot_metagenes <- function(object,
                            component = 1,
                            top = 10,
@@ -106,8 +108,8 @@ plot_metagenes <- function(object,
     metagenes <- object$metagenes[[1]][[1]][[1]]
     ranks <- object$metagenes[[1]][[1]][[2]]
   } else {
-    metagenes <- object$metagenes[[1]][[2]][[1]]
-    ranks <- object$metagenes[[1]][[1]][[2]] 
+    metagenes <- object$metagenes[[2]][[1]][[1]]
+    ranks <- object$metagenes[[2]][[1]][[2]] 
   }
   
   shap_values_nonzero_long <- metagenes %>% 
@@ -116,11 +118,11 @@ plot_metagenes <- function(object,
     mutate(feature = case_when(name %in% ranks[1:top] ~ name,
                                !(name %in% ranks[1:top]) ~ "other"))
   
-  colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$feature)) - 1)
-  names(colors_raw) <- unique(shap_values_nonzero_long$feature)[unique(shap_values_nonzero_long$feature) != "other"]
-  other_color <- "gray80"
-  names(other_color) <- "other"
-  manual_colors <- c(colors_raw, other_color)
+  # colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$feature)) - 1)
+  # names(colors_raw) <- unique(shap_values_nonzero_long$feature)[unique(shap_values_nonzero_long$feature) != "other"]
+  # other_color <- "gray80"
+  # names(other_color) <- "other"
+  # manual_colors <- c(colors_raw, other_color)
     
   ggplot(shap_values_nonzero_long) +
     {if(!clusters) geom_col(aes(reorder(id, as.numeric(clust)), value, fill = feature))} +
@@ -130,7 +132,7 @@ plot_metagenes <- function(object,
     theme(axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
           panel.grid.major = element_blank()) +
-    {if(!clusters) scale_fill_manual(values = manual_colors)} +
+    # {if(!clusters) scale_fill_manual(values = manual_colors)} +
     {if(clusters) scale_fill_manual(values = ggsci::pal_npg()(length(table(shap_values_nonzero_long$clust))))} +
     NULL
 }
@@ -162,4 +164,46 @@ plot_factors <- function(object,
 ##
 
 (dd/cc) | (aa/bb)
+
+##
+
+poma_object <- function(object,
+                        omics,
+                        ...) {
+  
+  omics <- align_omics(omics)
+  
+  object <- POMA::PomaSummarizedExperiment(target = data.frame(id = rownames(object$factorizations[[1]]),
+                                                               cluster = as.factor(object$factorizations[[1]]$clust)),
+                                           features = as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))) %>% 
+    POMA::PomaNorm(method = "log_scaling")
+  return(object)
+}
+
+my_poma <- poma_object(test_ubmi, omics)
+
+plot_expressions <- function(object,
+                             features = NULL,
+                             theme_params = list(),
+                             ...) { 
+  
+  object %>% 
+    POMA::PomaBoxplots(group = "features", feature_name = features, theme_params = theme_params) 
+}
+
+c1_exp <- plot_expressions(my_poma, 
+                           features = test_ubmi$metagenes[[1]][[1]][[2]][1:10],
+                           theme_params = list(axis_x_rotate = TRUE))
+
+c2_exp <- plot_expressions(my_poma, 
+                           features = test_ubmi$metagenes[[2]][[1]][[2]][1:10],
+                           theme_params = list(axis_x_rotate = TRUE))
+
+c1_exp/c2_exp
+
+
+
+
+
+
 
