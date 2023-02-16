@@ -192,7 +192,7 @@ plot_factors <- function(object,
 (ee <- plot_factors(test_ubmi, label_size = 4))
 
 ##
-subtitle0 <- "2D mainfold for 170 samples and 26236 features"
+subtitle0 <- "2-dimensional manifold for 170 samples and 26236 features"
 subtitle1 <- "SHAP values of the top features associated to first coordinate (x-axis)"
 subtitle2 <- "SHAP values of the top features associated to second coordinate (y-axis)"
   
@@ -211,8 +211,8 @@ poma_object <- function(object,
   
   omics <- align_omics(omics)
   
-  object <- POMA::PomaSummarizedExperiment(target = data.frame(id = rownames(object$factorizations[[1]]),
-                                                               cluster = as.factor(object$factorizations[[1]]$clust)),
+  object <- POMA::PomaSummarizedExperiment(target = data.frame(id = rownames(object@factors),
+                                                               cluster = as.factor(object@clusters)),
                                            features = as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))) %>% 
     POMA::PomaNorm(method = "log_scaling")
   return(object)
@@ -230,18 +230,12 @@ plot_expressions <- function(object,
 }
 
 c1_exp <- plot_expressions(my_poma, 
-                           features = test_ubmi$metagenes[[1]][[1]][[2]][1:10],
+                           features = test_ubmi@metagenes_factor1_rank[1:10],
                            theme_params = list(axis_x_rotate = TRUE))
 
 c2_exp <- plot_expressions(my_poma, 
-                           features = test_ubmi$metagenes[[2]][[1]][[2]][1:10],
+                           features = test_ubmi@metagenes_factor2_rank[1:10],
                            theme_params = list(axis_x_rotate = TRUE))
 
 c1_exp/c2_exp
-
-
-
-
-
-
 
