@@ -1,92 +1,54 @@
 
-library(uwot)
-
-folder <- "/Users/pol/Dropbox/compare_clusters/data/cancer/aml/"
-file.names = c("log_exp", "methy", "log_mirna")
-
-omics <- list()
-for (i in 1:length(file.names)){
-  omics[[i]] <- as.matrix(read.table(paste(folder, file.names[i], sep = "/"), sep = " ", row.names = 1, header = T))
+ubmi <- function(omics,
+                 umap_params = list(n_neighbors = 15, n_components = 4, pca = 50),
+                 umap_params_conc = list(n_neighbors = 15, n_components = 2),
+                 min_pts = 10,
+                 xgboost_params = list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95),
+                 ...) {
+  
+  omics <- align_omics(omics)
+  
+  # Factorization
+  umap_factors <- lapply(omics, function(x) umap_factorization(umap_params = c(list(X = x), umap_params)))
+  concatenated_factors <- list(dplyr::bind_cols(umap_factors, .name_repair = "unique_quiet"))
+  message("Computing individual factorizations... OK!")
+  
+  umap_integrated <- lapply(concatenated_factors, function(x) umap_factorization(umap_params = c(list(X = x), umap_params_conc)))
+  message("Computing multi-omics factorization... OK!")
+  
+  # Clustering
+  hdbscan_labels <- lapply(umap_integrated, function(x) dbscan::hdbscan(x, minPts = min_pts))[[1]]
+  
+  umap_clusters <- data.frame(umap_integrated[[1]], clust = hdbscan_labels$cluster)
+  colnames(umap_clusters)[1:(ncol(umap_clusters) - 1)] <- paste0("UMAP", 1:(ncol(umap_clusters) - 1))
+  message("Computing multi-omics clustering... OK!")
+  
+  # Metagenes
+  message("Computing metagenes...")
+  features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
+  omics <- c(list(features), omics)
+  
+  xgboost_fixed_params <- list(objective = "reg:squarederror")
+  
+  xgboost_metagenesUMAP1 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP1, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
+  message("Metagenes associated with the 1st dimension of the mainfold... OK!")
+  xgboost_metagenesUMAP2 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP2, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
+  message("Metagenes associated with the 2nd dimension of the mainfold... OK!")
+  
+  ubmi_res <- new("UBMIObject",
+                  factors = umap_clusters,
+                  clusters = umap_clusters$clust,
+                  single_factors = umap_factors,
+                  metagenes_factor1 = xgboost_metagenesUMAP1[[1]][[1]],
+                  metagenes_factor1_rank = xgboost_metagenesUMAP1[[1]][[2]],
+                  metagenes_factor2 = xgboost_metagenesUMAP2[[1]][[1]],
+                  metagenes_factor2_rank = xgboost_metagenesUMAP2[[1]][[2]],
+                  single_metagenes_factor1 = xgboost_metagenesUMAP1[-1],
+                  single_metagenes_factor2 = xgboost_metagenesUMAP2[-1]#,
+                  # ubmiVersion = packageVersion("ubmi")
+  )
+  
+  if(validObject(ubmi_res))
+    return(ubmi_res)
 }
-
-
-
-
-
-
-
-
-
-if (is.null(num_fact_conc)) {
-  num_fact_conc <- num.factors
-}
-if (is.null(neighbors_conc)) {
-  neighbors_conc <- floor(sqrt(nrow(concatenated_embeddings)))
-}
-if (is.null(min_dist_conc)) {
-  min_dist_conc <- 0.01 # uwot default
-}
-if (is.null(spread_conc)) {
-  spread_conc <- 1 # uwot default
-}
-
-
-####
-library(xgboost)
-library(SHAPforxgboost)
-
-param_list <- list(objective = "reg:squarederror",  # For regression
-                   eta = 0.02,
-                   max_depth = 10,
-                   gamma = 0.01,
-                   subsample = 0.95)
-
-dataX <- t(omics[[1]])
-
-mod <- xgboost::xgboost(data = dataX, 
-                        label = as.matrix(concatenated_umap[,1]), 
-                        params = param_list, nrounds = 10,
-                        verbose = FALSE, nthread = parallel::detectCores() - 2,
-                        early_stopping_rounds = 8)
-
-# To return the SHAP values and ranked features by mean|SHAP|
-shap_values <- shap.values(xgb_model = mod, X_train = dataX)
-
-# The ranked features by mean |SHAP|
-shap_values$mean_shap_score
-
-# To prepare the long-format data:
-shap_long <- shap.prep(xgb_model = mod, X_train = dataX)
-# is the same as: using given shap_contrib
-shap_long <- shap.prep(shap_contrib = shap_values$shap_score, X_train = dataX)
-# **SHAP summary plot**
-shap.plot.summary(shap_long)
-
-plot_data <- shap.prep.stack.data(shap_contrib = shap_values$shap_score, top_n = 4, n_groups = 6)
-# you may choose to zoom in at a location, and set y-axis limit using `y_parent_limit`  
-shap.plot.force_plot(plot_data#, 
-                     # zoom_in_location = 10,
-                     # y_parent_limit = c(-0.1,0.1)
-                     )
-
-
-# if(min_pts == "auto") {
-#   min_pts <- floor(0.03 * nrow(t(omics[[1]]))) # 5/170 ~ 0.03 (empirical factor)
-# }
-# 
-# hdbscan_labels <- dbscan::hdbscan(concatenated_umap, minPts = min_pts)
-# umap_factors <- data.frame(concatenated_umap)
-# 
-# umap_metagenes <- function(x) {
-#   umap_neighbors <- floor(sqrt(nrow(x)))
-#   metagenes <- uwot::umap(x, n_neighbors = umap_neighbors, n_components = num.factors)
-#   metagenes <- as.matrix(metagenes)
-#   return(metagenes)
-# }
-
-# metagenes_umap <- lapply(omics, function(x) umap_metagenes(x))
-
-
-
-
 

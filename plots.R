@@ -1,82 +1,160 @@
 
-library(tidyverse)
-library(xgboost)
-library(SHAPforxgboost)
+plot_metagenes <- function(object,
+                           component = 1,
+                           top = 10,
+                           cluster_line = FALSE,
+                           ...) {
+  
+  factors <- object@factors
+  
+  if (component == 1) {
+    metagenes <- object@metagenes_factor1
+    ranks <- object@metagenes_factor1_rank[object@metagenes_factor1_rank %in% colnames(metagenes)]
+  } else {
+    metagenes <- object@metagenes_factor2
+    ranks <- object@metagenes_factor2_rank[object@metagenes_factor2_rank %in% colnames(metagenes)]
+  }
+  
+  shap_values_nonzero_long <- metagenes %>% 
+    dplyr::mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
+    tidyr::pivot_longer(cols = -c(id, Cluster)) %>%
+    dplyr::mutate(Feature = dplyr::case_when(name %in% ranks[1:top] ~ name,
+                                             !(name %in% ranks[1:top]) ~ "Other features"))
+  
+  if (top > length(ranks)) top <- length(ranks)
+  
+  ggplot2::ggplot(shap_values_nonzero_long) +
+    ggplot2::geom_col(ggplot2::aes(reorder(id, as.numeric(Cluster)), value, fill = Feature)) +
+    ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::labs(x = "Samples (Ranked by Cluster)",
+                  y = "SHAP Value") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.x = ggplot2::element_blank(),
+                   panel.grid.major = ggplot2::element_blank()) +
+    
+    {if(length(ranks) >= top & top <= 10 & component == 1) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(ggsci::pal_npg()(top), "gray90"))} +
+    {if(length(ranks) >= top & top <= 10 & component == 2) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(ggsci::pal_simpsons()(top), "gray90"))} +
+    
+    {if(length(ranks) >= top & top > 10 & component == 1) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(viridis::viridis(top), "gray90"))} +
+    {if(length(ranks) >= top & top > 10 & component == 2) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(viridis::viridis(top, option = "plasma"), "gray90"))} +
+    
+    {if(length(ranks) < top & top > 10 & component == 1) 
+      scale_fill_manual(breaks = c(ranks[1:top]),
+                        values = c(viridis::viridis(length(unique(shap_values_nonzero_long$Feature)))))} +
+    {if(length(ranks) < top & top > 10 & component == 2) 
+      scale_fill_manual(breaks = c(ranks[1:top]),
+                        values = c(viridis::viridis(length(unique(shap_values_nonzero_long$Feature)), option = "plasma")))} +
+    
+    {if(cluster_line) ggplot2::geom_vline(xintercept = cumsum(as.numeric(table(factors$clust)))[-length(table(factors$clust))],
+                                          linetype = "dashed", color = "gray50", linewidth = 0.5)}
+}
 
-out <- readRDS(file = "/Users/pol/Dropbox/compare_clusters/clone/results_target/target_ubmi_factorization.Rds")
-factors <- out$factorizations[[1]][[1]]
-clusters <- paste0("Cluster ", out$UBMI.clusters)
+plot_metagenes_clusters <- function(object,
+                                    component = 1,
+                                    ...) {
+  
+  factors <- object@factors
+  
+  if (component == 1) {
+    metagenes <- object@metagenes_factor1
+  } else {
+    metagenes <- object@metagenes_factor2
+  }
+  
+  shap_values_nonzero_long <- metagenes %>% 
+    dplyr::mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
+    tidyr::pivot_longer(cols = -c(id, Cluster)) %>% 
+    dplyr::group_by(Cluster) %>% 
+    dplyr::summarise(median_shap = median(value)) %>% 
+    dplyr::ungroup()
+  
+  clust_num <- length(table(factors$clust))
+  
+  ggplot2::ggplot(shap_values_nonzero_long, ggplot2::aes(Cluster, median_shap, fill = Cluster)) +
+    ggplot2::geom_col(alpha = 0.8) +
+    ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::labs(x = NULL,
+                  y = "Median SHAP Value") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+                   panel.grid.major = ggplot2::element_blank()) +
+    {if(clust_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(clust_num))} +
+    {if(clust_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
+    NULL
+}
+         
+plot_factors <- function(object,
+                         label_size = 0,
+                         ...) {
+  
+  factors <- object@factors %>% 
+    dplyr::mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
+    dplyr::group_by(Cluster) %>% 
+    dplyr::mutate(cord1 = median(UMAP1),
+                  cord2 = median(UMAP2)) %>% 
+    dplyr::ungroup()
+  
+  clust_num <- length(table(factors$Cluster))
+  
+  ggplot2::ggplot(factors, ggplot2::aes(UMAP1, UMAP2)) +
+    ggplot2::geom_point(ggplot2::aes(fill = Cluster), pch = 21, size = 3, alpha = 0.8, color = "black") +
+    ggplot2::theme_bw() +
+    {if(label_size != 0) ggplot2::geom_label(data = factors[!duplicated(factors$Cluster),], 
+                                             ggplot2::aes(cord1, cord2, fill = Cluster, label = Cluster),
+                                             color = "white", show.legend = FALSE, size = label_size)} +
+    {if(clust_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(clust_num))} +
+    {if(clust_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
+    NULL
+}
 
-# load("/Users/pol/Dropbox/compare_clusters/clone/results20221114222238/results_clusters/survival_clusters.RData")
-# out <- readRDS(file = "/Users/pol/Dropbox/compare_clusters/clone/results20221114222238/amlresults_out.Rds")
-# factors <- out$factorizations[[7]][[1]]
-# clusters <- paste0("Cluster ", out_clust_surv$aml$UBMI)
+plot_ubmi_grid <- function(object,
+                           # top_features = 10,
+                           ...) {
+  
+  top_features <- 10
+  
+  # ranks1 <- object@metagenes_factor1_rank[object@metagenes_factor1_rank %in% colnames(object@metagenes_factor1)]
+  # ranks2 <- object@metagenes_factor2_rank[object@metagenes_factor2_rank %in% colnames(object@metagenes_factor2)]
+  # 
+  # ranks_max <- max(length(ranks1), length(ranks2))
+  # 
+  # if (top_features > ranks_max) top_features <- ranks_max
+  
+  subtitle_factors <- paste0("2-dimensional manifold (", nrow(object@factors), " samples and " , length(object@metagenes_factor1_rank), " features)")
+  
+  factors <- plot_factors(object, label_size = 4) +
+    ggplot2::theme(legend.position = "bottom") + 
+    ggplot2::labs(subtitle = subtitle_factors)
+  
+  metaclusters1 <- plot_metagenes_clusters(object) + 
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.x = ggplot2::element_blank(),
+                   legend.position = "none") + 
+    ggplot2::labs(subtitle = "SHAP values by cluster (1st dimension)") 
+  
+  metaclusters2 <- plot_metagenes_clusters(object, component = 2) + 
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.x = ggplot2::element_blank(),
+                   legend.position = "none") + 
+    ggplot2::labs(subtitle = "SHAP values by cluster (2nd dimension)") 
+  
+  metagenes1 <- plot_metagenes(object, component = 1, top = top_features, cluster_line = TRUE) + 
+    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 1st dimension of the mainfold")) 
+  
+  metagenes2 <- plot_metagenes(object, component = 2, top = top_features, cluster_line = TRUE) + 
+    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 2nd dimension of the mainfold")) 
+  
+  (factors / (metaclusters1 | metaclusters2)) | 
+    (metagenes1 / metagenes2)
+  
+}
 
-# UBMI Scatterplot
-ubmi <- data.frame(factors, clust = clusters) %>%
-  # filter(clust != "Cluster 0") %>%
-  # filter(clust %in% c("Cluster 6", "Cluster 7")) %>%
-  filter(!clust %in% c("Cluster 0", "Cluster 1")) %>%
-  rownames_to_column("id")
-
-dataX <- cbind(t(omics[[1]]), t(omics[[2]]), t(omics[[3]]))
-# dataX <- cbind(t(omics[[1]]))
-
-param_list <- list(objective = "reg:squarederror",  # For regression
-                   eta = 0.02,
-                   max_depth = 10,
-                   gamma = 0.01,
-                   subsample = 0.95)
-
-mod <- xgboost::xgboost(data = dataX[rownames(dataX) %in% ubmi$id, ],
-                        label = as.matrix(ubmi[, 2]), # Embedding 1 
-                        params = param_list, nrounds = 10,
-                        verbose = FALSE, nthread = parallel::detectCores() - 2,
-                        early_stopping_rounds = 8)
-
-# To return the SHAP values and ranked features by mean|SHAP|
-shap_values <- shap.values(xgb_model = mod, X_train = dataX[rownames(dataX) %in% ubmi$id, ])
-top_features <- 10
-
-# The ranked features by mean |SHAP|
-shap_contrib <- shap_values$shap_score
-ranked_col <- names(colMeans(abs(shap_contrib))[order(colMeans(abs(shap_contrib)), decreasing = TRUE)])
-
-shap_values_df <- data.frame(shap_values$shap_score)
-shap_values_nonzero <- data.frame(id = ubmi$id, clust = ubmi$clust,
-                                  shap_values_df[, apply(shap_values_df, 2, function(x) !all(x == 0, na.rm = TRUE))])
-
-#########
-
-shap_values_nonzero_long <- shap_values_nonzero %>% 
-  pivot_longer(cols = -c(id, clust)) %>%
-  mutate(feature = case_when(name %in% ranked_col[1:top_features] ~ name,
-                             !(name %in% ranked_col[1:top_features]) ~ "other"))
-
-colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$feature)) - 1)
-names(colors_raw) <- unique(shap_values_nonzero_long$feature)[unique(shap_values_nonzero_long$feature) != "other"]
-other_color <- "gray80"
-names(other_color) <- "other"
-manual_colors <- c(colors_raw, other_color)
-
-ggplot(shap_values_nonzero_long, aes(reorder(id, as.numeric(gsub("Cluster ", "", clust))), value, fill = feature)) +
-  geom_col() +
-  geom_hline(yintercept = 0) +
-  # facet_wrap(~ clust, scales = "free") +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        panel.grid.major = element_blank()) +
-  scale_fill_manual(values = manual_colors)
-
-ggplot(shap_values_nonzero_long, aes(reorder(id, as.numeric(gsub("Cluster ", "", clust))), value, fill = clust)) +
-  geom_col() +
-  geom_hline(yintercept = 0) +
-  # facet_wrap(~ clust, scales = "free") +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        panel.grid.major = element_blank()) +
-  scale_fill_manual(values = ggsci::pal_npg()(length(unique(shap_values_nonzero_long$clust))))
-
-                     
