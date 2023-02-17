@@ -1,15 +1,4 @@
 
-test_ubmi <- readRDS("test_ubmi.Rds")
-
-plot_ubmi_grid(test_ubmi, cluster_label_size = 0)
-
-  
-
-
-# ggsave(filename = "PoC_grid_AML.png", width = 15, height = 9)
-
-##
-
 poma_object <- function(object,
                         omics,
                         ...) {
