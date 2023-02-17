@@ -6,6 +6,7 @@ plot_metagenes <- function(object,
                            ...) {
   
   factors <- object@factors
+  clust_num <- length(table(factors$clust))
   
   if (component == 1) {
     metagenes <- object@metagenes_factor1
@@ -19,7 +20,8 @@ plot_metagenes <- function(object,
     dplyr::mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
     tidyr::pivot_longer(cols = -c(id, Cluster)) %>%
     dplyr::mutate(Feature = dplyr::case_when(name %in% ranks[1:top] ~ name,
-                                             !(name %in% ranks[1:top]) ~ "Other features"))
+                                             !(name %in% ranks[1:top]) ~ "Other features")) %>% 
+    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", 0:clust_num))))
   
   if (top > length(ranks)) top <- length(ranks)
   
@@ -63,6 +65,7 @@ plot_metagenes_clusters <- function(object,
                                     ...) {
   
   factors <- object@factors
+  clust_num <- length(table(factors$clust))
   
   if (component == 1) {
     metagenes <- object@metagenes_factor1
@@ -75,10 +78,9 @@ plot_metagenes_clusters <- function(object,
     tidyr::pivot_longer(cols = -c(id, Cluster)) %>% 
     dplyr::group_by(Cluster) %>% 
     dplyr::summarise(median_shap = median(value)) %>% 
-    dplyr::ungroup()
-  
-  clust_num <- length(table(factors$clust))
-  
+    dplyr::ungroup() %>% 
+    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", 0:clust_num))))
+
   ggplot2::ggplot(shap_values_nonzero_long, ggplot2::aes(Cluster, median_shap, fill = Cluster)) +
     ggplot2::geom_col(alpha = 0.8) +
     ggplot2::geom_hline(yintercept = 0) +
@@ -96,14 +98,15 @@ plot_factors <- function(object,
                          label_size = 0,
                          ...) {
   
+  clust_num <- length(table(object@factors$clust))
+  
   factors <- object@factors %>% 
     dplyr::mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
     dplyr::group_by(Cluster) %>% 
     dplyr::mutate(cord1 = median(UMAP1),
                   cord2 = median(UMAP2)) %>% 
-    dplyr::ungroup()
-  
-  clust_num <- length(table(factors$Cluster))
+    dplyr::ungroup() %>% 
+    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", 0:clust_num))))
   
   ggplot2::ggplot(factors, ggplot2::aes(UMAP1, UMAP2)) +
     ggplot2::geom_point(ggplot2::aes(fill = Cluster), pch = 21, size = 3, alpha = 0.8, color = "black") +
@@ -149,10 +152,10 @@ plot_ubmi_grid <- function(object,
     ggplot2::labs(subtitle = "SHAP values by cluster (2nd dimension)") 
   
   metagenes1 <- plot_metagenes(object, component = 1, top = top_features, cluster_line = TRUE) + 
-    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 1st dimension of the mainfold")) 
+    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 1st dimension of the manifold")) 
   
   metagenes2 <- plot_metagenes(object, component = 2, top = top_features, cluster_line = TRUE) + 
-    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 2nd dimension of the mainfold")) 
+    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 2nd dimension of the manifold")) 
   
   (factors / (metaclusters1 | metaclusters2)) | 
     (metagenes1 / metagenes2)

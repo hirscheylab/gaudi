@@ -31,9 +31,9 @@ ubmi <- function(omics,
   xgboost_fixed_params <- list(objective = "reg:squarederror")
   
   xgboost_metagenesUMAP1 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP1, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-  message("Metagenes associated with the 1st dimension of the mainfold... OK!")
+  message("Metagenes associated with the 1st dimension of the manifold... OK!")
   xgboost_metagenesUMAP2 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP2, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-  message("Metagenes associated with the 2nd dimension of the mainfold... OK!")
+  message("Metagenes associated with the 2nd dimension of the manifold... OK!")
   
   ubmi_res <- new("UBMIObject",
                   factors = umap_clusters,
