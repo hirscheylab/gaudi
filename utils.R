@@ -1,5 +1,4 @@
 
-
 align_omics <- function(omics) {
   samples <- colnames(omics[[1]])
   for (j in 1:length(omics)) {

@@ -118,6 +118,7 @@ plot_factors <- function(object,
 
 plot_ubmi_grid <- function(object,
                            # top_features = 10,
+                           cluster_label_size = 4,
                            ...) {
   
   top_features <- 10
@@ -131,7 +132,7 @@ plot_ubmi_grid <- function(object,
   
   subtitle_factors <- paste0("2-dimensional manifold (", nrow(object@factors), " samples and " , length(object@metagenes_factor1_rank), " features)")
   
-  factors <- plot_factors(object, label_size = 4) +
+  factors <- plot_factors(object, label_size = cluster_label_size) +
     ggplot2::theme(legend.position = "bottom") + 
     ggplot2::labs(subtitle = subtitle_factors)
   

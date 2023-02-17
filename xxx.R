@@ -1,7 +1,7 @@
 
 test_ubmi <- readRDS("test_ubmi.Rds")
 
-plot_ubmi_grid(test_ubmi)
+plot_ubmi_grid(test_ubmi, cluster_label_size = 0)
 
   
 
