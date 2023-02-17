@@ -6,7 +6,7 @@ plot_metagenes <- function(object,
                            ...) {
   
   factors <- object@factors
-  clust_num <- length(table(factors$clust))
+  # clust_num <- length(table(factors$clust))
   
   if (component == 1) {
     metagenes <- object@metagenes_factor1
@@ -21,7 +21,7 @@ plot_metagenes <- function(object,
     tidyr::pivot_longer(cols = -c(id, Cluster)) %>%
     dplyr::mutate(Feature = dplyr::case_when(name %in% ranks[1:top] ~ name,
                                              !(name %in% ranks[1:top]) ~ "Other features")) %>% 
-    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", 0:clust_num))))
+    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
   
   if (top > length(ranks)) top <- length(ranks)
   
@@ -79,7 +79,7 @@ plot_metagenes_clusters <- function(object,
     dplyr::group_by(Cluster) %>% 
     dplyr::summarise(median_shap = median(value)) %>% 
     dplyr::ungroup() %>% 
-    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", 0:clust_num))))
+    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
 
   ggplot2::ggplot(shap_values_nonzero_long, ggplot2::aes(Cluster, median_shap, fill = Cluster)) +
     ggplot2::geom_col(alpha = 0.8) +
@@ -98,20 +98,21 @@ plot_factors <- function(object,
                          label_size = 0,
                          ...) {
   
-  clust_num <- length(table(object@factors$clust))
+  factors <- object@factors
+  clust_num <- length(table(factors$clust))
   
-  factors <- object@factors %>% 
+  plot_data <- factors %>% 
     dplyr::mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
     dplyr::group_by(Cluster) %>% 
     dplyr::mutate(cord1 = median(UMAP1),
                   cord2 = median(UMAP2)) %>% 
     dplyr::ungroup() %>% 
-    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", 0:clust_num))))
+    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
   
-  ggplot2::ggplot(factors, ggplot2::aes(UMAP1, UMAP2)) +
+  ggplot2::ggplot(plot_data, ggplot2::aes(UMAP1, UMAP2)) +
     ggplot2::geom_point(ggplot2::aes(fill = Cluster), pch = 21, size = 3, alpha = 0.8, color = "black") +
     ggplot2::theme_bw() +
-    {if(label_size != 0) ggplot2::geom_label(data = factors[!duplicated(factors$Cluster),], 
+    {if(label_size != 0) ggplot2::geom_label(data = plot_data[!duplicated(plot_data$Cluster),], 
                                              ggplot2::aes(cord1, cord2, fill = Cluster, label = Cluster),
                                              color = "white", show.legend = FALSE, size = label_size)} +
     {if(clust_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(clust_num))} +

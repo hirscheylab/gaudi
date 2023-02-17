@@ -40,3 +40,18 @@ xgboost_model <- function(x, y, xgboost_params = list()) {
   return(list(shap_contrib_nonzero, ranked_col))
 }
 
+drop_clusters <- function(object,
+                          clusters = 0,
+                          ...) {
+  
+  nonzero <- which(!(object@factors$clust %in% clusters))
+  
+  object@factors <- object@factors[nonzero ,]
+  object@clusters <- object@clusters[nonzero]
+  object@metagenes_factor1 <- object@metagenes_factor1[nonzero ,]
+  object@metagenes_factor2 <- object@metagenes_factor2[nonzero ,] 
+  
+  if(validObject(object))
+    return(object)
+}
+
