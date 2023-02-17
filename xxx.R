@@ -47,10 +47,10 @@ xgboost_model <- function(x, y, xgboost_params = list()) {
 ##
 
 ubmi <- function(omics,
-                 umap_params = list(),
-                 umap_params_conc = list(),
-                 min_pts = 5,
-                 xgboost_params = list(),
+                 umap_params = list(n_neighbors = 15, n_components = 4, pca = 50),
+                 umap_params_conc = list(n_neighbors = 15, n_components = 2),
+                 min_pts = 10,
+                 xgboost_params = list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95),
                  ...) {
   
   omics <- align_omics(omics)
@@ -58,7 +58,7 @@ ubmi <- function(omics,
   # Factorization
   umap_factors <- lapply(omics, function(x) umap_factorization(umap_params = c(list(X = x), umap_params)))
   concatenated_factors <- list(dplyr::bind_cols(umap_factors, .name_repair = "unique_quiet"))
-  message("Computing single omics factorizations... OK!")
+  message("Computing individual factorizations... OK!")
   
   umap_integrated <- lapply(concatenated_factors, function(x) umap_factorization(umap_params = c(list(X = x), umap_params_conc)))
   message("Computing multi-omics factorization... OK!")
@@ -68,48 +68,41 @@ ubmi <- function(omics,
   
   umap_clusters <- data.frame(umap_integrated[[1]], clust = hdbscan_labels$cluster)
   colnames(umap_clusters)[1:(ncol(umap_clusters) - 1)] <- paste0("UMAP", 1:(ncol(umap_clusters) - 1))
-  message("Computing multi-omics clusters... OK!")
+  message("Computing multi-omics clustering... OK!")
   
   # Metagenes
   message("Computing metagenes...")
   features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
   omics <- c(list(features), omics)
     
-  xgboost_fixed_params <- list(objective = "reg:squarederror", lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95)
+  xgboost_fixed_params <- list(objective = "reg:squarederror")
   
   xgboost_metagenesUMAP1 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP1, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-  message("Metagenes associated with factor 1... OK!")
+  message("Metagenes associated with the 1st dimension of the mainfold... OK!")
   xgboost_metagenesUMAP2 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP2, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-  message("Metagenes associated with factor 2... OK!")
+  message("Metagenes associated with the 2nd dimension of the mainfold... OK!")
   
   ubmi_res <- new("UBMIObject",
-                  
                   factors = umap_clusters,
                   clusters = umap_clusters$clust,
-                  
                   single_factors = umap_factors,
-                  
                   metagenes_factor1 = xgboost_metagenesUMAP1[[1]][[1]],
                   metagenes_factor1_rank = xgboost_metagenesUMAP1[[1]][[2]],
-                  
                   metagenes_factor2 = xgboost_metagenesUMAP2[[1]][[1]],
                   metagenes_factor2_rank = xgboost_metagenesUMAP2[[1]][[2]],
-                  
                   single_metagenes_factor1 = xgboost_metagenesUMAP1[-1],
-                  single_metagenes_factor2 = xgboost_metagenesUMAP2[-1]
+                  single_metagenes_factor2 = xgboost_metagenesUMAP2[-1]#,
+                  # ubmiVersion = packageVersion("ubmi")
                   )
   
   if(validObject(ubmi_res))
     return(ubmi_res)
 }
 
-test_ubmi <- ubmi(omics, 
-                  umap_params = list(n_neighbors = 15, n_components = 4, pca = 50),
-                  umap_params_conc = list(n_neighbors = 15, n_components = 2),
-                  min_pts = 10,
-                  xgboost_params = list())
+test_ubmi <- ubmi(omics)
 
 # saveRDS(test_ubmi, file = "test_ubmi.Rds")
+test_ubmi <- readRDS("test_ubmi.Rds")
 
 ##
 
@@ -123,46 +116,59 @@ plot_metagenes <- function(object,
   
   factors <- object@factors
   
-  if(component == 1) {
+  if (component == 1) {
     metagenes <- object@metagenes_factor1
-    ranks <- object@metagenes_factor1_rank
+    ranks <- object@metagenes_factor1_rank[object@metagenes_factor1_rank %in% colnames(metagenes)]
   } else {
     metagenes <- object@metagenes_factor2
-    ranks <- object@metagenes_factor2_rank
+    ranks <- object@metagenes_factor2_rank[object@metagenes_factor2_rank %in% colnames(metagenes)]
   }
   
   shap_values_nonzero_long <- metagenes %>% 
-    mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
-    pivot_longer(cols = -c(id, Cluster)) %>%
-    mutate(Feature = case_when(name %in% ranks[1:top] ~ name,
-                               !(name %in% ranks[1:top]) ~ "Others"))
-  
-  # colors_raw <- ggsci::pal_npg()(length(unique(shap_values_nonzero_long$Feature)) - 1)
-  # names(colors_raw) <- unique(shap_values_nonzero_long$Feature)[unique(shap_values_nonzero_long$Feature) != "Others"]
-  # other_color <- "gray80"
-  # names(other_color) <- "Others"
-  # manual_colors <- c(colors_raw, other_color)
+    dplyr::mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
+    tidyr::pivot_longer(cols = -c(id, Cluster)) %>%
+    dplyr::mutate(Feature = dplyr::case_when(name %in% ranks[1:top] ~ name,
+                                             !(name %in% ranks[1:top]) ~ "Other features"))
     
-  ggplot(shap_values_nonzero_long) +
-    {if(!clusters) geom_col(aes(reorder(id, as.numeric(Cluster)), value, fill = Feature))} +
-    {if(clusters) geom_col(aes(reorder(id, as.numeric(Cluster)), value, fill = Cluster))} +
-    geom_hline(yintercept = 0) +
-    labs(x = "Samples (Ranked by Cluster)",
-         y = "SHAP Value") +
-    theme_bw() +
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          panel.grid.major = element_blank()) +
-    {if(!clusters & component == 1) scale_fill_viridis_d()} +
-    {if(!clusters & component != 1) scale_fill_viridis_d(option = "plasma")} +
-    {if(clusters) scale_fill_manual(values = ggsci::pal_npg()(length(table(shap_values_nonzero_long$Cluster))))} +
-    NULL
+  ggplot2::ggplot(shap_values_nonzero_long) +
+    {if(!clusters) ggplot2::geom_col(ggplot2::aes(reorder(id, as.numeric(Cluster)), value, fill = Feature))} +
+    # {if(clusters) ggplot2::geom_col(ggplot2::aes(reorder(id, as.numeric(Cluster)), value, fill = Cluster))} +
+    ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::labs(x = "Samples (Ranked by Cluster)",
+                  y = "SHAP Value") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(axis.text.x = element_blank(),
+                   axis.ticks.x = element_blank(),
+                   panel.grid.major = element_blank()) +
+    
+    # {if(clusters) ggplot2::scale_fill_manual(values = ggsci::pal_npg()(length(table(shap_values_nonzero_long$Cluster))))} +
+    
+    {if(!clusters & length(ranks) >= top & top <= 10 & component == 1) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(ggsci::pal_npg()(top), "gray90"))} +
+    {if(!clusters & length(ranks) >= top & top <= 10 & component == 2) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(ggsci::pal_simpsons()(top), "gray90"))} +
+    
+    {if(!clusters & length(ranks) >= top & top > 10 & component == 1) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(viridis::viridis(top), "gray90"))} +
+    {if(!clusters & length(ranks) >= top & top > 10 & component == 2) 
+      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
+                        values = c(viridis::viridis(top, option = "plasma"), "gray90"))} +
+
+    {if(!clusters & length(ranks) < top & top > 10 & component == 1) 
+      scale_fill_manual(breaks = c(ranks[1:top]),
+                        values = c(viridis::viridis(length(unique(shap_values_nonzero_long$Feature)))))} +
+    {if(!clusters & length(ranks) < top & top > 10 & component == 2) 
+      scale_fill_manual(breaks = c(ranks[1:top]),
+                        values = c(viridis::viridis(length(unique(shap_values_nonzero_long$Feature)), option = "plasma")))}
 }
 
 library(patchwork)
 
-aa <- plot_metagenes(test_ubmi)
-bb <- plot_metagenes(test_ubmi, component = 2)
+(aa <- plot_metagenes(test_ubmi, component = 1, top = 1000))
+(bb <- plot_metagenes(test_ubmi, component = 2, top = 2000))
 
 (cc <- plot_metagenes(test_ubmi, clusters = TRUE))
 (dd <- plot_metagenes(test_ubmi, clusters = TRUE, component = 2))
@@ -174,19 +180,19 @@ plot_factors <- function(object,
                          ...) {
   
   factors <- object@factors %>% 
-    mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
-    group_by(Cluster) %>% 
-    mutate(cord1 = median(UMAP1),
-           cord2 = median(UMAP2)) %>% 
-    ungroup()
+    dplyr::mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
+    dplyr::group_by(Cluster) %>% 
+    dplyr::mutate(cord1 = median(UMAP1),
+                  cord2 = median(UMAP2)) %>% 
+    dplyr::ungroup()
 
-  ggplot(factors, aes(UMAP1, UMAP2)) +
-    geom_point(aes(fill = Cluster), pch = 21, size = 3, alpha = 0.8, color = "black") +
-    theme_bw() +
-    {if(label_size != 0) geom_label(data = factors[!duplicated(factors$Cluster),], 
-                                    aes(cord1, cord2, fill = Cluster, label = Cluster),
-                                    show.legend = FALSE, size = label_size)} +
-    scale_fill_manual(values = ggsci::pal_npg()(length(table(factors$Cluster))))
+  ggplot2::ggplot(factors, ggplot2::aes(UMAP1, UMAP2)) +
+    ggplot2::geom_point(ggplot2::aes(fill = Cluster), pch = 21, size = 3, alpha = 0.8, color = "black") +
+    ggplot2::theme_bw() +
+    {if(label_size != 0) ggplot2::geom_label(data = factors[!duplicated(factors$Cluster),], 
+                                             ggplot2::aes(cord1, cord2, fill = Cluster, label = Cluster),
+                                             show.legend = FALSE, size = label_size)} +
+    ggplot2::scale_fill_manual(values = ggsci::pal_npg()(length(table(factors$Cluster))))
 }
 
 (ee <- plot_factors(test_ubmi, label_size = 4))
@@ -215,6 +221,7 @@ poma_object <- function(object,
                                                                cluster = as.factor(object@clusters)),
                                            features = as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))) %>% 
     POMA::PomaNorm(method = "log_scaling")
+  
   return(object)
 }
 
@@ -227,6 +234,7 @@ plot_expressions <- function(object,
   
   object %>% 
     POMA::PomaBoxplots(group = "features", feature_name = features, theme_params = theme_params) 
+  
 }
 
 c1_exp <- plot_expressions(my_poma, 
