@@ -26,7 +26,12 @@ mirna <- t(mirna_final %>% column_to_rownames("id"))
 
 omics <- list(expression, methylation, mirna)
 
-target_ubmi <- ubmi(omics, )
+target_ubmi <- ubmi(omics, 
+                    umap_params = list(n_neighbors = 11, 
+                                       n_components = 10, pca = 50, min_dist = 0.01),
+                    umap_params_conc = list(n_neighbors = 11, 
+                                            n_components = 2, spread = 1, min_dist = 0.1),
+                    min_pts = 5)
 # saveRDS(target_ubmi, file = "target_ubmi.Rds")
 # target_ubmi <- readRDS("target_ubmi.Rds")
 
@@ -37,13 +42,6 @@ plot_ubmi_grid(clean_object, cluster_label_size = 3)
 
 
 
-# num_factors <- 10
-# num_fact_conc <- 2
-# pca_comps <- 50
-# min_dist_conc <- 0.1
-# min_dist_indv <- NULL
-# spread_conc <- NULL
-# min_pts <- 5
 
 # ggsave(filename = "PoC_grid_AML.png", width = 15, height = 9)
 

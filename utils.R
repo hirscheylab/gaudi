@@ -17,6 +17,7 @@ clean_feature_names <- function(omics) {
   omics <- lapply(omics, FUN = function(x){
     colnames(x) <- gsub("\\.", "_", colnames(x))
     colnames(x) <- gsub("\\-", "_", colnames(x))
+    x <- as.matrix(x)
   })
   return(omics)
 }

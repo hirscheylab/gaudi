@@ -143,13 +143,15 @@ plot_ubmi_grid <- function(object,
     ggplot2::theme(axis.text.x = ggplot2::element_blank(),
                    axis.ticks.x = ggplot2::element_blank(),
                    legend.position = "none") + 
-    ggplot2::labs(subtitle = "SHAP values by cluster (1st dimension)") 
+    ggplot2::labs(subtitle = "SHAP values by cluster (1st dimension)",
+                  x = "Cluster") 
   
   metaclusters2 <- plot_metagenes_clusters(object, component = 2) + 
     ggplot2::theme(axis.text.x = ggplot2::element_blank(),
                    axis.ticks.x = ggplot2::element_blank(),
                    legend.position = "none") + 
-    ggplot2::labs(subtitle = "SHAP values by cluster (2nd dimension)") 
+    ggplot2::labs(subtitle = "SHAP values by cluster (2nd dimension)",
+                  x = "Cluster") 
   
   metagenes1 <- plot_metagenes(object, component = 1, top = top_features, cluster_line = TRUE) + 
     ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 1st dimension of the manifold")) 
