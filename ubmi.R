@@ -7,6 +7,7 @@ ubmi <- function(omics,
                  ...) {
   
   omics <- align_omics(omics)
+  omics <- clean_feature_names(omics)
   
   # Factorization
   umap_factors <- lapply(omics, function(x) umap_factorization(umap_params = c(list(X = x), umap_params)))

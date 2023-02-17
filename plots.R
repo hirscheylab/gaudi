@@ -6,7 +6,6 @@ plot_metagenes <- function(object,
                            ...) {
   
   factors <- object@factors
-  # clust_num <- length(table(factors$clust))
   
   if (component == 1) {
     metagenes <- object@metagenes_factor1

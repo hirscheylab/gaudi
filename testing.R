@@ -26,7 +26,7 @@ mirna <- t(mirna_final %>% column_to_rownames("id"))
 
 omics <- list(expression, methylation, mirna)
 
-target_ubmi <- ubmi(omics)
+target_ubmi <- ubmi(omics, )
 # saveRDS(target_ubmi, file = "target_ubmi.Rds")
 # target_ubmi <- readRDS("target_ubmi.Rds")
 

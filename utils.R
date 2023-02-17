@@ -13,6 +13,14 @@ align_omics <- function(omics) {
   return(omics)
 }
 
+clean_feature_names <- function(omics) {
+  omics <- lapply(omics, FUN = function(x){
+    colnames(x) <- gsub("\\.", "_", colnames(x))
+    colnames(x) <- gsub("\\-", "_", colnames(x))
+  })
+  return(omics)
+}
+
 umap_factorization <- function(umap_params = list()) {
   umap_factors <- do.call(uwot::umap, umap_params)
   umap_factors <- data.frame(umap_factors)
