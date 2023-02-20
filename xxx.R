@@ -14,7 +14,7 @@ poma_object <- function(object,
   return(object)
 }
 
-my_poma <- poma_object(target_ubmi, omics)
+my_poma <- poma_object(ubmi_object, omics)
 
 plot_expressions <- function(object,
                              features = NULL,
@@ -27,11 +27,11 @@ plot_expressions <- function(object,
 }
 
 c1_exp <- plot_expressions(my_poma, 
-                           features = target_ubmi@metagenes_factor1_rank[1:2],
+                           features = ubmi_object@metagenes_factor1_rank[1:2],
                            theme_params = list(axis_x_rotate = TRUE))
 
 c2_exp <- plot_expressions(my_poma, 
-                           features = target_ubmi@metagenes_factor2_rank[1:10],
+                           features = ubmi_object@metagenes_factor2_rank[1:2],
                            theme_params = list(axis_x_rotate = TRUE))
 
 c1_exp/c2_exp
