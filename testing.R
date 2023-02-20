@@ -1,4 +1,7 @@
 
+library(tidyverse)
+library(patchwork)
+
 # DepMap
 load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData")
 colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colnames(methylation_clean)[2:ncol(methylation_clean)])
