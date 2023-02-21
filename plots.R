@@ -95,6 +95,7 @@ plot_metagenes_clusters <- function(object,
          
 plot_factors <- function(object,
                          label_size = 0,
+                         draw_lines = FALSE,
                          ad_hoc_label = NULL,
                          ...) {
   
@@ -119,6 +120,8 @@ plot_factors <- function(object,
   }
   
   plot_complete <- ggplot2::ggplot(plot_data, ggplot2::aes(UMAP1, UMAP2)) +
+    {if(draw_lines) geom_vline(xintercept = median(plot_data$UMAP1), linetype = "dashed", color = "black")} +
+    {if(draw_lines) geom_hline(yintercept = median(plot_data$UMAP2), linetype = "dashed", color = "black")} +
     ggplot2::geom_point(ggplot2::aes(fill = Label), pch = 21, size = 3, alpha = 0.8, color = "black") +
     ggplot2::theme_bw() +
     {if(label_size != 0) ggplot2::geom_label(data = plot_data[!duplicated(plot_data$Label),], 
@@ -143,6 +146,7 @@ plot_ubmi_grid <- function(object,
                            # top_features = 10,
                            cluster_label_size = 4,
                            ad_hoc_label = NULL,
+                           draw_lines = TRUE,
                            ...) {
   
   top_features <- 10
@@ -156,7 +160,7 @@ plot_ubmi_grid <- function(object,
   
   subtitle_factors <- paste0("2-dimensional manifold (", nrow(object@factors), " samples and " , length(object@metagenes_factor1_rank), " features)")
   
-  factors <- plot_factors(object, label_size = cluster_label_size, ad_hoc_label = ad_hoc_label) +
+  factors <- plot_factors(object, label_size = cluster_label_size, ad_hoc_label = ad_hoc_label, draw_lines = draw_lines) +
     ggplot2::theme(legend.position = "bottom") + 
     ggplot2::labs(subtitle = subtitle_factors)
   

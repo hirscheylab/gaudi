@@ -1,4 +1,65 @@
 
+
+dichotomize_clusters <- function(object,
+                                 component = 1,
+                                 ...) {
+  
+  factors <- object@factors
+  
+  if (component == 1) {
+    metagenes <- object@metagenes_factor1
+  } else {
+    metagenes <- object@metagenes_factor2
+  }
+  
+  groups <- metagenes %>% 
+    dplyr::mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
+    tidyr::pivot_longer(cols = -c(id, Cluster)) %>% 
+    dplyr::group_by(Cluster) %>% 
+    dplyr::summarise(median_shap = median(value)) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(group = dplyr::case_when(median_shap > 0 ~ "high",
+                                           median_shap <= 0 ~ "low"))
+  
+  group <- factors %>% 
+    dplyr::mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
+    dplyr::left_join(groups, by = "Cluster") %>% 
+    dplyr::pull(group)
+  
+  return(group)
+  
+}
+
+dichotomize_clusters(ubmi_object, component = 2)
+
+ubmi_gsea <- function(data,
+                      groups = NULL,
+                      species = "human", 
+                      category = "H",
+                      subcategory = NULL,
+                      ...) {
+  
+  msigdb_paths <- msigdbr::msigdbr(species = species, category = category, subcategory = subcategory)
+  hallmark_pathways <- split(x = msigdb_paths$gene_symbol, f = msigdb_paths$gs_name)
+  
+  design <- stats::model.matrix(~ 0 + as.factor(groups))
+  colnames(design) <- levels(as.factor(groups))
+  
+  hallmark_indices_exp <- limma::ids2indices(hallmark_pathways, rownames(data))
+  gsea_exp <- limma::camera(data, hallmark_indices_exp, design = design) 
+  
+  gsea_res <- gsea_exp %>% 
+    dplyr::filter(FDR < 0.05) %>% 
+    tibble::rownames_to_column()
+  
+  return(gsea_res)
+}
+
+ubmi_gsea(omics[[1]], groups = dichotomize_clusters(ubmi_object, component = 1))
+ubmi_gsea(omics[[1]], groups = dichotomize_clusters(ubmi_object, component = 2))
+
+####
+
 poma_object <- function(object,
                         omics,
                         ...) {
