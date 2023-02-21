@@ -80,14 +80,14 @@ plot_metagenes_clusters <- function(object,
     dplyr::ungroup() %>% 
     dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
 
-  ggplot2::ggplot(shap_values_nonzero_long, ggplot2::aes(Cluster, median_shap, fill = Cluster)) +
+  ggplot2::ggplot(shap_values_nonzero_long, ggplot2::aes(as.factor(as.numeric(gsub("Cluster ", "", Cluster))),
+                                                         median_shap, fill = Cluster)) +
     ggplot2::geom_col(alpha = 0.8) +
     ggplot2::geom_hline(yintercept = 0) +
     ggplot2::labs(x = NULL,
                   y = "Median SHAP Value") +
     ggplot2::theme_bw() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-                   panel.grid.major = ggplot2::element_blank()) +
+    ggplot2::theme(panel.grid.major = ggplot2::element_blank()) +
     {if(clust_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(clust_num))} +
     {if(clust_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
     NULL
@@ -161,16 +161,12 @@ plot_ubmi_grid <- function(object,
     ggplot2::labs(subtitle = subtitle_factors)
   
   metaclusters1 <- plot_metagenes_clusters(object) + 
-    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
-                   axis.ticks.x = ggplot2::element_blank(),
-                   legend.position = "none") + 
+    ggplot2::theme(legend.position = "none") + 
     ggplot2::labs(subtitle = "SHAP values by cluster (1st dimension)",
                   x = "Cluster") 
   
   metaclusters2 <- plot_metagenes_clusters(object, component = 2) + 
-    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
-                   axis.ticks.x = ggplot2::element_blank(),
-                   legend.position = "none") + 
+    ggplot2::theme(legend.position = "none") + 
     ggplot2::labs(subtitle = "SHAP values by cluster (2nd dimension)",
                   x = "Cluster") 
   

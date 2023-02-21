@@ -28,7 +28,7 @@ ubmi_object <- readRDS("depmap_ubmi_no_blood_skin.Rds")
 clean_object <- drop_clusters(ubmi_object, clusters = c(0)) # c(0, 7:21)
 plot_ubmi_grid(clean_object, cluster_label_size = 3, ad_hoc_label = yvar_all$group[yvar_all$id %in% rownames(clean_object@factors)])
 plot_ubmi_grid(clean_object, cluster_label_size = 3, ad_hoc_label = yvar_all$lineage[yvar_all$id %in% rownames(clean_object@factors)])
-plot_ubmi_grid(clean_object, cluster_label_size = 3)
+plot_ubmi_grid(clean_object, cluster_label_size = 0)
 
 # TARGET
 load("/Users/pol/Dropbox/aml_clusters/data/target_multiomics.RData")
