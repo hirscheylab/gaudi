@@ -22,12 +22,12 @@ plot_expressions <- function(object,
                              ...) { 
   
   object %>% 
-    POMA::PomaBoxplots(group = "features", feature_name = features, theme_params = theme_params) 
+    POMA::PomaBoxplots(group = "features", feature_name = features, theme_params = theme_params)
   
 }
 
 c1_exp <- plot_expressions(my_poma, 
-                           features = ubmi_object@metagenes_factor1_rank[1:2],
+                           features = ubmi_object@metagenes_factor1_rank[1],
                            theme_params = list(axis_x_rotate = TRUE))
 
 c2_exp <- plot_expressions(my_poma, 
