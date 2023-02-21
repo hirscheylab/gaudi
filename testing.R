@@ -5,17 +5,25 @@ library(patchwork)
 # DepMap
 load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData")
 colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colnames(methylation_clean)[2:ncol(methylation_clean)])
+colnames(expression_clean)[2:ncol(expression_clean)] <- gsub("\\..*", "", colnames(expression_clean)[2:ncol(expression_clean)])
 
-expression <- t(expression_clean %>% column_to_rownames("id"))
-methylation <- t(methylation_clean %>% column_to_rownames("id"))
-mirna <- t(mirna_clean %>% column_to_rownames("id"))
-metabolomics <- t(metabolomics_clean %>% column_to_rownames("id"))
+# expression <- t(expression_clean %>% column_to_rownames("id"))
+# methylation <- t(methylation_clean %>% column_to_rownames("id"))
+# mirna <- t(mirna_clean %>% column_to_rownames("id"))
+# metabolomics <- t(metabolomics_clean %>% column_to_rownames("id"))
+
+expression <- t(expression_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+methylation <- t(methylation_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+mirna <- t(mirna_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+metabolomics <- t(metabolomics_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
 
 omics <- list(expression, methylation, mirna, metabolomics)
 
-depmap_ubmi <- ubmi(omics)
-# saveRDS(depmap_ubmi, file = "depmap_ubmi.Rds")
-# ubmi_object <- readRDS("depmap_ubmi.Rds")
+depmap_ubmi <- ubmi(omics, 
+                    min_pts = 7,
+                    xgboost_params = list(lambda = 1, eta = 0.3, gamma = 10, max_depth = 10, subsample = 0.95))
+# saveRDS(depmap_ubmi, file = "depmap_ubmi_no_blood_skin.Rds")
+# ubmi_object <- readRDS("depmap_ubmi_no_blood_skin.Rds")
 
 clean_object <- drop_clusters(ubmi_object, clusters = c(0)) # c(0, 7:21)
 plot_ubmi_grid(clean_object, cluster_label_size = 3)

@@ -95,33 +95,44 @@ plot_metagenes_clusters <- function(object,
          
 plot_factors <- function(object,
                          label_size = 0,
+                         ad_hoc_label = NULL,
                          ...) {
   
   factors <- object@factors
   clust_num <- length(table(factors$clust))
+  ad_hoc_label_num <- length(table(ad_hoc_label))
   
-  plot_data <- factors %>% 
-    dplyr::mutate(Cluster = as.factor(paste0("Cluster ", clust))) %>% 
-    dplyr::group_by(Cluster) %>% 
-    dplyr::mutate(cord1 = median(UMAP1),
-                  cord2 = median(UMAP2)) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
+  if (is.null(ad_hoc_label)) {
+    plot_data <- factors %>% 
+      dplyr::mutate(Label = as.factor(paste0("Cluster ", clust))) %>% 
+      dplyr::group_by(Label) %>% 
+      dplyr::mutate(cord1 = median(UMAP1), cord2 = median(UMAP2)) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::mutate(Label = factor(Label, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
+    
+  } else {
+    plot_data <- factors %>% 
+      dplyr::mutate(Label = as.factor(ad_hoc_label)) %>% 
+      dplyr::group_by(Label) %>% 
+      dplyr::mutate(cord1 = median(UMAP1), cord2 = median(UMAP2)) %>% 
+      dplyr::ungroup()
+  }
   
   ggplot2::ggplot(plot_data, ggplot2::aes(UMAP1, UMAP2)) +
-    ggplot2::geom_point(ggplot2::aes(fill = Cluster), pch = 21, size = 3, alpha = 0.8, color = "black") +
+    ggplot2::geom_point(ggplot2::aes(fill = Label), pch = 21, size = 3, alpha = 0.8, color = "black") +
     ggplot2::theme_bw() +
-    {if(label_size != 0) ggplot2::geom_label(data = plot_data[!duplicated(plot_data$Cluster),], 
-                                             ggplot2::aes(cord1, cord2, fill = Cluster, label = Cluster),
+    {if(label_size != 0) ggplot2::geom_label(data = plot_data[!duplicated(plot_data$Label),], 
+                                             ggplot2::aes(cord1, cord2, fill = Label, label = Label),
                                              color = "white", show.legend = FALSE, size = label_size)} +
-    {if(clust_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(clust_num))} +
-    {if(clust_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
+    {if(clust_num <= 10 | ad_hoc_label_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(ifelse(is.null(ad_hoc_label), clust_num, ad_hoc_label_num)))} +
+    {if(clust_num > 10 | ad_hoc_label_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
     NULL
 }
 
 plot_ubmi_grid <- function(object,
                            # top_features = 10,
                            cluster_label_size = 4,
+                           ad_hoc_label = NULL,
                            ...) {
   
   top_features <- 10
@@ -135,7 +146,7 @@ plot_ubmi_grid <- function(object,
   
   subtitle_factors <- paste0("2-dimensional manifold (", nrow(object@factors), " samples and " , length(object@metagenes_factor1_rank), " features)")
   
-  factors <- plot_factors(object, label_size = cluster_label_size) +
+  factors <- plot_factors(object, label_size = cluster_label_size, ad_hoc_label = ad_hoc_label) +
     ggplot2::theme(legend.position = "bottom") + 
     ggplot2::labs(subtitle = subtitle_factors)
   
