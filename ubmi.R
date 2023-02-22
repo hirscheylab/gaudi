@@ -50,6 +50,7 @@ ubmi <- function(omics,
   )
   
   if(validObject(ubmi_res))
+    message("Integration complete!")
     return(ubmi_res)
 }
 

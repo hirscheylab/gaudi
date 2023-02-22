@@ -1,5 +1,4 @@
 
-
 dichotomize_clusters <- function(object,
                                  component = 1,
                                  ...) {
@@ -30,7 +29,7 @@ dichotomize_clusters <- function(object,
   
 }
 
-dichotomize_clusters(ubmi_object, component = 2)
+# dichotomize_clusters(ubmi_object, component = 2)
 
 ubmi_gsea <- function(data,
                       groups = NULL,
@@ -55,8 +54,8 @@ ubmi_gsea <- function(data,
   return(gsea_res)
 }
 
-ubmi_gsea(omics[[1]], groups = dichotomize_clusters(ubmi_object, component = 1))
-ubmi_gsea(omics[[1]], groups = dichotomize_clusters(ubmi_object, component = 2))
+# ubmi_gsea(omics[[1]], groups = dichotomize_clusters(ubmi_object, component = 1))
+# ubmi_gsea(omics[[1]], groups = dichotomize_clusters(ubmi_object, component = 2))
 
 ####
 
