@@ -8,15 +8,15 @@ load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RDa
 colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colnames(methylation_clean)[2:ncol(methylation_clean)])
 colnames(expression_clean)[2:ncol(expression_clean)] <- gsub("\\..*", "", colnames(expression_clean)[2:ncol(expression_clean)])
 
-# expression <- t(expression_clean %>% column_to_rownames("id"))
-# methylation <- t(methylation_clean %>% column_to_rownames("id"))
-# mirna <- t(mirna_clean %>% column_to_rownames("id"))
-# metabolomics <- t(metabolomics_clean %>% column_to_rownames("id"))
+expression <- t(expression_clean %>% column_to_rownames("id"))
+methylation <- t(methylation_clean %>% column_to_rownames("id"))
+mirna <- t(mirna_clean %>% column_to_rownames("id"))
+metabolomics <- t(metabolomics_clean %>% column_to_rownames("id"))
 
-expression <- t(expression_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
-methylation <- t(methylation_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
-mirna <- t(mirna_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
-metabolomics <- t(metabolomics_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+# expression <- t(expression_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+# methylation <- t(methylation_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+# mirna <- t(mirna_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+# metabolomics <- t(metabolomics_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
 
 omics <- list(expression, methylation, mirna, metabolomics)
 
