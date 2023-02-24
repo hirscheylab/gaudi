@@ -24,7 +24,7 @@ depmap_ubmi <- ubmi(omics,
                     min_pts = 8,
                     xgboost_params = list(lambda = 1, eta = 0.3, gamma = 50, max_depth = 10, subsample = 0.95))
 # saveRDS(depmap_ubmi, file = "depmap_ubmi_no_blood_skin.Rds")
-ubmi_object <- readRDS("depmap_ubmi_no_blood_skin.Rds")
+ubmi_object <- readRDS("others/depmap_ubmi_no_blood_skin.Rds")
 
 clean_object <- drop_clusters(ubmi_object, clusters = c(0)) # c(0, 7:21)
 plot_ubmi_grid(clean_object, cluster_label_size = 3, ad_hoc_label = yvar_all$group[yvar_all$id %in% rownames(clean_object@factors)])
