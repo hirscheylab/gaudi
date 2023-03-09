@@ -4,7 +4,7 @@ library(patchwork)
 library(msigdbr)
 
 # DepMap
-load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData")
+load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData") 
 colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colnames(methylation_clean)[2:ncol(methylation_clean)])
 colnames(expression_clean)[2:ncol(expression_clean)] <- gsub("\\..*", "", colnames(expression_clean)[2:ncol(expression_clean)])
 
