@@ -19,7 +19,7 @@ yvar_all <- achilles_clean[, c("id", colnames(achilles_clean)[grepl("SDHB", coln
                      dplyr::select(DepMap_ID, cell_name, age, lineage, lineage_subtype),
                    by = c("id" = "DepMap_ID")) %>%
   # dplyr::filter(!(lineage %in% c("blood", "lymphocyte", "plasma_cell", "skin"))) %>%
-  dplyr::filter(lineage == "blood") %>%
+  # dplyr::filter(lineage == "blood") %>%
   dplyr::mutate(group = dplyr::case_when(SDHB < -1 ~ "sensitive",
                                          SDHB > quantile(.[,2], 0.9) ~ "resistant",
                                          TRUE ~ "neutral"))
