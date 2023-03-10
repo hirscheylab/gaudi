@@ -8,22 +8,34 @@ load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RDa
 colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colnames(methylation_clean)[2:ncol(methylation_clean)])
 colnames(expression_clean)[2:ncol(expression_clean)] <- gsub("\\..*", "", colnames(expression_clean)[2:ncol(expression_clean)])
 
-expression <- t(expression_clean %>% column_to_rownames("id"))
-methylation <- t(methylation_clean %>% column_to_rownames("id"))
-mirna <- t(mirna_clean %>% column_to_rownames("id"))
-metabolomics <- t(metabolomics_clean %>% column_to_rownames("id"))
+# expression <- t(expression_clean %>% column_to_rownames("id"))
+# methylation <- t(methylation_clean %>% column_to_rownames("id"))
+# mirna <- t(mirna_clean %>% column_to_rownames("id"))
+# metabolomics <- t(metabolomics_clean %>% column_to_rownames("id"))
 
-# expression <- t(expression_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
-# methylation <- t(methylation_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
-# mirna <- t(mirna_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
-# metabolomics <- t(metabolomics_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+yvar_all <- achilles_clean[, c("id", colnames(achilles_clean)[grepl("SDHB", colnames(achilles_clean))])] %>%
+  dplyr::rename(SDHB = 2) %>%
+  dplyr::left_join(sample_info %>%
+                     dplyr::select(DepMap_ID, cell_name, age, lineage, lineage_subtype),
+                   by = c("id" = "DepMap_ID")) %>%
+  # dplyr::filter(!(lineage %in% c("blood", "lymphocyte", "plasma_cell", "skin"))) %>%
+  dplyr::filter(lineage == "blood") %>%
+  dplyr::mutate(group = dplyr::case_when(SDHB < -1 ~ "sensitive",
+                                         SDHB > quantile(.[,2], 0.9) ~ "resistant",
+                                         TRUE ~ "neutral"))
+
+expression <- t(expression_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+methylation <- t(methylation_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+mirna <- t(mirna_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
+metabolomics <- t(metabolomics_clean %>% filter(id %in% yvar_all$id) %>% column_to_rownames("id"))
 
 omics <- list(expression, methylation, mirna, metabolomics)
 
 depmap_ubmi <- ubmi(omics, 
+                    umap_params = list(n_neighbors = 15, n_components = 4, pca = NULL),
                     min_pts = 8,
                     xgboost_params = list(lambda = 1, eta = 0.3, gamma = 50, max_depth = 10, subsample = 0.95))
-# saveRDS(depmap_ubmi, file = "depmap_ubmi_no_blood_skin.Rds")
+# saveRDS(depmap_ubmi, file = "others/depmap_ubmi_blood.Rds")
 ubmi_object <- readRDS("others/depmap_ubmi_no_blood_skin.Rds")
 
 clean_object <- drop_clusters(ubmi_object, clusters = c(0)) # c(0, 7:21)

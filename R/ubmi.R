@@ -36,17 +36,22 @@ ubmi <- function(omics,
   xgboost_metagenesUMAP2 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP2, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
   message("Metagenes associated with the 2nd dimension of the manifold... OK!")
   
+  shaps1 <- data.frame(xgboost_metagenesUMAP1[[1]][[1]])
+  if (ncol(shaps1) == 1) colnames(shaps1) <- xgboost_metagenesUMAP1[[1]][[2]][1]
+  shaps2 <- data.frame(xgboost_metagenesUMAP2[[1]][[1]])
+  if (ncol(shaps2) == 1) colnames(shaps2) <- xgboost_metagenesUMAP2[[1]][[2]][1]
+  
   ubmi_res <- new("UBMIObject",
                   factors = umap_clusters,
                   clusters = umap_clusters$clust,
                   single_factors = umap_factors,
-                  metagenes_factor1 = xgboost_metagenesUMAP1[[1]][[1]],
+                  metagenes_factor1 = shaps1,
                   metagenes_factor1_rank = xgboost_metagenesUMAP1[[1]][[2]],
-                  metagenes_factor2 = xgboost_metagenesUMAP2[[1]][[1]],
+                  metagenes_factor2 = shaps2,
                   metagenes_factor2_rank = xgboost_metagenesUMAP2[[1]][[2]],
                   single_metagenes_factor1 = xgboost_metagenesUMAP1[-1],
-                  single_metagenes_factor2 = xgboost_metagenesUMAP2[-1]#,
-                  # ubmiVersion = packageVersion("ubmi")
+                  single_metagenes_factor2 = xgboost_metagenesUMAP2[-1],
+                  ubmiVersion = as.character(packageVersion("ubmi"))
   )
   
   if(validObject(ubmi_res))
