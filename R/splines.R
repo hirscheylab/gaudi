@@ -57,3 +57,42 @@ library(patchwork)
 
 (a + b) / (c + d)
 
+####
+
+library(segmented)
+
+find_segments_ab <- function(gene) {
+  
+  y <- sort(gene)
+  x <- 1:length(y)
+  
+  dati <- data.frame(x = x, y = y)
+  out.lm <- lm(y ~ x, data = dati)
+  
+  o_n_psi <- segmented(out.lm, seg.Z = ~x, npsi = 2,
+                       control = seg.control(display = FALSE))
+  
+  dat2 <- data.frame(x = x, y = broken.line(o_n_psi)$fit)
+  
+  dati <- dati %>% 
+    dplyr::mutate(tail = case_when(x <= o_n_psi$psi[1,1] ~ "lower",
+                                   x >= o_n_psi$psi[2,1] ~ "upper",
+                                   TRUE ~ "middle"))
+  
+  ggplot(dati, aes(x = x, y = y, color = tail)) +
+    geom_point() +
+    geom_line(data = dat2, color = 'black') +
+    labs(x = "Cell Rank",
+         y = "Dependency Score") +
+    theme_classic() +
+    theme(legend.position = "none") +
+    scale_color_manual(values = c("lower" = "red", "middle" = "gray", "upper" = "red"))
+}
+
+aa <- find_segments_ab(gene = achilles_clean$`TP53 (7157)`) + labs(title = "TP53")
+bb <- find_segments_ab(gene = achilles_clean$`SDHB (6390)`) + labs(title = "SDHB")
+cc <- find_segments_ab(gene = achilles_clean$`AASS (10157)`) + labs(title = "AASS")
+dd <- find_segments_ab(gene = achilles_clean$`SIRT4 (23409)`) + labs(title = "SIRT4")
+
+(aa + bb) / (cc + dd)
+
