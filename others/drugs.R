@@ -34,30 +34,15 @@ achilles <- achilles_train %>%
   tibble::column_to_rownames("id") %>%
   as.matrix()
 
-colnames(methylation) <- paste0("tss_", colnames(methylation))
+# colnames(methylation) <- paste0("tss_", colnames(methylation))
 colnames(achilles) <- paste0("dep_", colnames(achilles))
 
 ##
 
-omics <- list(t(prism), t(achilles), t(expression), t(methylation), t(mirna), t(metabolomics)) 
-drug_integration <- ubmi(omics)
-
-plot_ubmi_grid(drug_integration)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# omics <- list(t(prism), t(achilles), t(expression), t(methylation), t(mirna), t(metabolomics)) 
+# drug_integration <- ubmi(omics)
+# 
+# plot_ubmi_grid(drug_integration)
 
 find_segments <- function(gene, min_percent = 5) {
   
@@ -108,17 +93,21 @@ find_segments <- function(gene, min_percent = 5) {
   
 }
 
-molecular_features <- function(gene, 
+molecular_features <- function(drug, 
                                dependencies = achilles,
-                               # expression = expression_clean,
-                               # methylation = methylation_clean,
-                               # miRNA = mirna_clean,
-                               # metabolomics = metabolomics_clean,
+                               expression = expression,
+                               methylation = methylation,
+                               miRNA = mirna,
+                               metabolomics = metabolomics,
                                drugs = prism,
                                min_percent_cells = 5,
                                fdr_cutoff = 0.05) {
   
-  segments <- find_segments(dependencies[, colnames(dependencies) %in% c("id", gene)], min_percent = min_percent_cells) %>% 
+  # segments <- find_segments(dependencies[, colnames(dependencies) %in% c("id", gene)], min_percent = min_percent_cells) %>% 
+  #   dplyr::filter(tail != "middle") %>% 
+  #   dplyr::arrange(id)
+  
+  segments <- find_segments(drugs[, colnames(drugs) %in% c("id", drug)], min_percent = min_percent_cells) %>% 
     dplyr::filter(tail != "middle") %>% 
     dplyr::arrange(id)
   
