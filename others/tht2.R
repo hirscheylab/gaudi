@@ -1,38 +1,38 @@
 
 library(tidyverse)
 
-achilles <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/CRISPR_gene_effect.csv", delim = ",")
-expression <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/Expression_22Q2_Public.csv", delim = ",")
-methylation <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/Methylation_(1kb_upstream_TSS).csv", delim = ",")
-mirna <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/miRNA_Expression.csv", delim = ",")
-metabolomics <- vroom::vroom("/Users/pol/Dropbox/modp/data/Metabolomics.csv", delim = ",") %>% janitor::clean_names()
-
-cv_compute <- function(data) {
-  cvs <- data.frame(feature = colnames(data), cv = apply(data, 2, function(x){sd(x)/mean(x)}))
-  cvs <- cvs[order(-cvs$cv),]
-  return(cvs)
-} 
-
-top_cv_features <- function(data) {
-  idx <- PCEmisc::optimal_elbow(data)
-  features <- data[1:idx,] 
-  return(features)
-}
-
-select_features <- function(data) {
-  data_proc <- PCEmisc::cleaning(data, knn = TRUE, norm = FALSE, removeZeros = TRUE)
-  cvs <- cv_compute(data_proc[,-1])
-  top_cvs <- top_cv_features(cvs)
-  return(top_cvs$feature)
-}
-
-achilles_features <- select_features(achilles)
-achilles_features <- sub(" .*", "", achilles_features)
-expression_features <- select_features(expression)
-methylation_features <- select_features(methylation)
-methylation_features <- paste0("tss_", sub("_.*", "", methylation_features))
-mirna_features <- select_features(mirna)
-metabolomics_features <- select_features(metabolomics)
+# achilles <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/CRISPR_gene_effect.csv", delim = ",")
+# expression <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/Expression_22Q2_Public.csv", delim = ",")
+# methylation <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/Methylation_(1kb_upstream_TSS).csv", delim = ",")
+# mirna <- vroom::vroom("/Users/pol/Dropbox/gmv_project/data/22Q2/miRNA_Expression.csv", delim = ",")
+# metabolomics <- vroom::vroom("/Users/pol/Dropbox/modp/data/Metabolomics.csv", delim = ",") %>% janitor::clean_names()
+# 
+# cv_compute <- function(data) {
+#   cvs <- data.frame(feature = colnames(data), cv = apply(data, 2, function(x){sd(x)/mean(x)}))
+#   cvs <- cvs[order(-cvs$cv),]
+#   return(cvs)
+# } 
+# 
+# top_cv_features <- function(data) {
+#   idx <- PCEmisc::optimal_elbow(data)
+#   features <- data[1:idx,] 
+#   return(features)
+# }
+# 
+# select_features <- function(data) {
+#   data_proc <- PCEmisc::cleaning(data, knn = TRUE, norm = FALSE, removeZeros = TRUE)
+#   cvs <- cv_compute(data_proc[,-1])
+#   top_cvs <- top_cv_features(cvs)
+#   return(top_cvs$feature)
+# }
+# 
+# achilles_features <- select_features(achilles)
+# achilles_features <- sub(" .*", "", achilles_features)
+# expression_features <- select_features(expression)
+# methylation_features <- select_features(methylation)
+# methylation_features <- paste0("tss_", sub("_.*", "", methylation_features))
+# mirna_features <- select_features(mirna)
+# metabolomics_features <- select_features(metabolomics)
 
 ####
 load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData")
@@ -40,29 +40,29 @@ colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colname
 colnames(expression_clean)[2:ncol(expression_clean)] <- gsub("\\..*", "", colnames(expression_clean)[2:ncol(expression_clean)])
 colnames(achilles_clean)[2:ncol(achilles_clean)] <- sub(" .*", "", colnames(achilles_clean)[2:ncol(achilles_clean)])
 
-partial_pca <- function(data, features) {
-  sample_names <- data[,1]
-  data <- data[,-1]
-  data_top <- data[, colnames(data) %in% features]
-  data_rest <- data[, !colnames(data) %in% features]
-  
-  data_rest_pcs <- data_rest %>% 
-    prcomp() %>% 
-    purrr::pluck("x") %>% 
-    as.data.frame() %>% 
-    dplyr::select(PC1:PC50)
-  
-  data <- data.frame(id = sample_names, data_top, data_rest_pcs)
-
-  return(data)
-  
-}
-
-# achilles_clean <- partial_pca(achilles_clean, achilles_features)
-expression_clean <- partial_pca(expression_clean, expression_features)
-methylation_clean <- partial_pca(methylation_clean, methylation_features)
-mirna_clean <- partial_pca(mirna_clean, mirna_features)
-metabolomics_clean <- partial_pca(metabolomics_clean, metabolomics_features)
+# partial_pca <- function(data, features) {
+#   sample_names <- data[,1]
+#   data <- data[,-1]
+#   data_top <- data[, colnames(data) %in% features]
+#   data_rest <- data[, !colnames(data) %in% features]
+#   
+#   data_rest_pcs <- data_rest %>% 
+#     prcomp() %>% 
+#     purrr::pluck("x") %>% 
+#     as.data.frame() %>% 
+#     dplyr::select(PC1:PC50)
+#   
+#   data <- data.frame(id = sample_names, data_top, data_rest_pcs)
+# 
+#   return(data)
+#   
+# }
+# 
+# # achilles_clean <- partial_pca(achilles_clean, achilles_features)
+# expression_clean <- partial_pca(expression_clean, expression_features)
+# methylation_clean <- partial_pca(methylation_clean, methylation_features)
+# mirna_clean <- partial_pca(mirna_clean, mirna_features)
+# metabolomics_clean <- partial_pca(metabolomics_clean, metabolomics_features)
 
 ####
 sample_info <- sample_info %>%
@@ -81,6 +81,8 @@ omics <- list(expression, methylation, mirna, metabolomics) #, achilles)
 ubmi_object <- ubmi(omics, compute_features = FALSE, min_pts = 10,
                     umap_params = list(metric = "cosine"),
                     umap_params_conc = list(metric = "cosine", n_components = 2))
+
+# saveRDS(ubmi_object@factors, file = "/Users/pol/Dropbox/tars/foxi/data/ubmi_object2d.Rds")
 
 # ubmi3d <- cbind(ubmi_object@factors, lineage = sample_info$lineage)
 # options(warn = -1)
@@ -109,59 +111,97 @@ pdb <- ubmi_object_thyroid %>%
   filter(lineage_subtype == "thyroid_carcinoma") %>% 
   mutate(clust = paste0("clust", clust)) %>% 
   dplyr::select(id, clust) %>% 
-  mutate(clust = ifelse(id %in% c("ACH-000174", "ACH-000716"), "clust1", "clust2")) # REMOVE
+  filter(clust != "clust0")
 
 omicsdata <- bind_cols(expression_clean, methylation_clean[,-1], mirna_clean[,-1], metabolomics_clean[,-1]) %>% 
   filter(id %in% pdb$id) %>%
   left_join(pdb, by = "id") %>%
   column_to_rownames("id") %>% 
-  dplyr::select(clust, everything()) %>% 
+  dplyr::select(class = clust, everything()) %>% 
   as.data.frame()
 
-omicsdata <- smotefamily::SMOTE(X = omicsdata[,-1], target = as.factor(omicsdata[,1]), K = 1)$data
+# omicsdata <- smotefamily::SMOTE(X = as.data.frame(omicsdata[,-1]), target = as.factor(omicsdata[,1]), K = 1)$data
 
 poma_obj <- POMA::PomaSummarizedExperiment(target = data.frame(ID = paste0("sample_", 1:nrow(omicsdata)),
                                                                cluster = omicsdata$class), 
-                                           features = omicsdata[,-ncol(omicsdata)])
+                                           features = omicsdata[,-1])
 
-limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust1-clust2")
+limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust13-clust3")
 
 POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
 
 ####
-pathways <- readRDS(file = "/Users/pol/Dropbox/ddh_multiquery/msigs_ddh_list_large.Rds")
+dependencydata <- achilles_clean %>% 
+  filter(id %in% pdb$id) %>%
+  left_join(pdb, by = "id") %>%
+  column_to_rownames("id") %>% 
+  dplyr::select(class = clust, everything()) %>% 
+  as.data.frame()
 
-MOSEA <- function(data = NULL, # No ID column, just genes
-                  groups = NULL,
-                  pathways = NULL, # DDH pathways in the long format (63824 entries)
-                  adjPval_cutoff = 0.05) {
-  
-  ddh_pathways <- split(x = pathways$gene_symbol, f = pathways$gs_name)
-  
-  design <- stats::model.matrix( ~ 0 + groups, data = data)
-  ddh_indices <- limma::ids2indices(ddh_pathways, rownames(t(data)))
-  gsea_res_dep <- limma::camera(t(data), ddh_indices, design = design) 
-  
-  gsea_res <- gsea_res_dep %>% 
-    dplyr::filter(FDR < adjPval_cutoff) %>% 
-    tibble::rownames_to_column("GeneSet")
-  
-  return(gsea_res)
-  
-}
+poma_obj <- POMA::PomaSummarizedExperiment(target = data.frame(ID = paste0("sample_", 1:nrow(dependencydata)),
+                                                               cluster = dependencydata$class), 
+                                           features = dependencydata[,-1])
 
-aaa <- MOSEA(data = omicsdata[, colnames(omicsdata) %in% colnames(expression_clean[,-1])], 
-             groups = omicsdata$class, pathways = pathways, adjPval_cutoff = 1)
+limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust13-clust3")
 
-bbb <- MOSEA(data = omicsdata[, paste0("tss_", colnames(omicsdata)) %in% colnames(methylation_clean[,-1])], 
-             groups = omicsdata$class, pathways = pathways, adjPval_cutoff = 1)
-
+POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
 
 ####
-load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData")
-colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colnames(methylation_clean)[2:ncol(methylation_clean)])
-colnames(expression_clean)[2:ncol(expression_clean)] <- gsub("\\..*", "", colnames(expression_clean)[2:ncol(expression_clean)])
-colnames(achilles_clean)[2:ncol(achilles_clean)] <- sub(" .*", "", colnames(achilles_clean)[2:ncol(achilles_clean)])
+load("/Users/pol/Dropbox/modp/data/multiomics_train_prism.RData")
+load("/Users/pol/Dropbox/modp/data/multiomics_test_prism.RData")
+
+prism <- bind_rows(prism_train, prism_test)
+
+drugdata <- prism %>% 
+  filter(id %in% pdb$id) %>%
+  left_join(pdb, by = "id") %>%
+  column_to_rownames("id") %>% 
+  dplyr::select(class = clust, everything()) %>% 
+  as.data.frame()
+
+poma_obj <- POMA::PomaSummarizedExperiment(target = data.frame(ID = paste0("sample_", 1:nrow(drugdata)),
+                                                               cluster = drugdata$class), 
+                                           features = drugdata[,-1])
+
+limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust13-clust3")
+
+POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
+
+HDAC6 and HDAC10
+  
+# pathways <- readRDS(file = "/Users/pol/Dropbox/ddh_multiquery/msigs_ddh_list_large.Rds")
+# 
+# MOSEA <- function(data = NULL, # No ID column, just genes
+#                   groups = NULL,
+#                   pathways = NULL, # DDH pathways in the long format (63824 entries)
+#                   adjPval_cutoff = 0.05) {
+#   
+#   ddh_pathways <- split(x = pathways$gene_symbol, f = pathways$gs_name)
+#   
+#   design <- stats::model.matrix( ~ 0 + groups, data = data)
+#   ddh_indices <- limma::ids2indices(ddh_pathways, rownames(t(data)))
+#   gsea_res_dep <- limma::camera(t(data), ddh_indices, design = design) 
+#   
+#   gsea_res <- gsea_res_dep %>% 
+#     dplyr::filter(FDR < adjPval_cutoff) %>% 
+#     tibble::rownames_to_column("GeneSet")
+#   
+#   return(gsea_res)
+#   
+# }
+# 
+# aaa <- MOSEA(data = omicsdata[, colnames(omicsdata) %in% colnames(expression_clean[,-1])], 
+#              groups = omicsdata$class, pathways = pathways, adjPval_cutoff = 1)
+# 
+# bbb <- MOSEA(data = omicsdata[, paste0("tss_", colnames(omicsdata)) %in% colnames(methylation_clean[,-1])], 
+#              groups = omicsdata$class, pathways = pathways, adjPval_cutoff = 1)
+# 
+# 
+# ####
+# load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData")
+# colnames(methylation_clean)[2:ncol(methylation_clean)] <- paste0("tss_", colnames(methylation_clean)[2:ncol(methylation_clean)])
+# colnames(expression_clean)[2:ncol(expression_clean)] <- gsub("\\..*", "", colnames(expression_clean)[2:ncol(expression_clean)])
+# colnames(achilles_clean)[2:ncol(achilles_clean)] <- sub(" .*", "", colnames(achilles_clean)[2:ncol(achilles_clean)])
 
 # sample_info <- sample_info %>%
 #   dplyr::select(DepMap_ID, cell_name, age, lineage, lineage_subtype) %>% 
