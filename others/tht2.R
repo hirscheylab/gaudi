@@ -82,7 +82,12 @@ ubmi_object <- ubmi(omics, compute_features = FALSE, min_pts = 10,
                     umap_params = list(metric = "cosine"),
                     umap_params_conc = list(metric = "cosine", n_components = 2))
 
-# saveRDS(ubmi_object@factors, file = "/Users/pol/Dropbox/tars/foxi/data/ubmi_object2d.Rds")
+ubmi_object <- ubmi_object@factors %>% 
+  as.data.frame() %>% 
+  rownames_to_column("DepMap_ID") %>% 
+  left_join(sample_info, by = "DepMap_ID")
+
+# saveRDS(ubmi_object, file = "/Users/pol/Desktop/radar copia/data/ubmi_object2d.Rds")
 
 # ubmi3d <- cbind(ubmi_object@factors, lineage = sample_info$lineage)
 # options(warn = -1)
@@ -126,9 +131,9 @@ poma_obj <- POMA::PomaSummarizedExperiment(target = data.frame(ID = paste0("samp
                                                                cluster = omicsdata$class), 
                                            features = omicsdata[,-1])
 
-limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust13-clust3")
+limma_res1 <- POMA::PomaLimma(poma_obj, contrast = "clust7-clust5")
 
-POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
+POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res1$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
 
 ####
 dependencydata <- achilles_clean %>% 
@@ -142,9 +147,27 @@ poma_obj <- POMA::PomaSummarizedExperiment(target = data.frame(ID = paste0("samp
                                                                cluster = dependencydata$class), 
                                            features = dependencydata[,-1])
 
-limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust13-clust3")
+limma_res2 <- POMA::PomaLimma(poma_obj, contrast = "clust7-clust5") %>% 
+  arrange(logFC) %>% 
+  filter(P.Value < 0.01)
 
-POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
+POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res2$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
+
+##
+
+target_dependency <- dependencydata %>% 
+  dplyr::select(NMT1, class)
+
+smote_omics <- smotefamily::SMOTE(X = as.data.frame(omicsdata[,-1]), target = as.factor(omicsdata[,1]), K = 1)$data
+
+rf_res <- randomForest::randomForest(x = omicsdata[,-1],
+                                     y = as.factor(target_dependency$class))
+
+rf_imp <- randomForest::importance(rf_res) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("feature") %>% 
+  filter(MeanDecreaseGini != 0) %>% 
+  dplyr::arrange(desc(MeanDecreaseGini))
 
 ####
 load("/Users/pol/Dropbox/modp/data/multiomics_train_prism.RData")
@@ -163,11 +186,10 @@ poma_obj <- POMA::PomaSummarizedExperiment(target = data.frame(ID = paste0("samp
                                                                cluster = drugdata$class), 
                                            features = drugdata[,-1])
 
-limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust13-clust3")
+limma_res <- POMA::PomaLimma(poma_obj, contrast = "clust7-clust5")
 
 POMA::PomaBoxplots(poma_obj, group = "features", feature_name = limma_res$feature[1:20], theme_params = list(axis_x_rotate = TRUE))
 
-HDAC6 and HDAC10
   
 # pathways <- readRDS(file = "/Users/pol/Dropbox/ddh_multiquery/msigs_ddh_list_large.Rds")
 # 
