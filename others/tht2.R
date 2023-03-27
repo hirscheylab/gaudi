@@ -78,16 +78,16 @@ metabolomics <- t(metabolomics_clean %>% filter(id %in% sample_info$DepMap_ID) %
 
 omics <- list(expression, methylation, mirna, metabolomics) #, achilles)
 
-ubmi_object <- ubmi(omics, compute_features = FALSE, min_pts = 10,
+ubmi_object <- ubmi(omics, compute_features = TRUE, min_pts = 10,
                     umap_params = list(metric = "cosine"),
-                    umap_params_conc = list(metric = "cosine", n_components = 2))
+                    umap_params_conc = list(metric = "cosine", n_components = 3))
 
-ubmi_object <- ubmi_object@factors %>% 
+ubmi_object@factors <- ubmi_object@factors %>% 
   as.data.frame() %>% 
   rownames_to_column("DepMap_ID") %>% 
   left_join(sample_info, by = "DepMap_ID")
 
-# saveRDS(ubmi_object, file = "/Users/pol/Desktop/radar copia/data/ubmi_object2d.Rds")
+# saveRDS(ubmi_object, file = "/Users/pol/Dropbox/foxi/data/ubmi_object.Rds")
 
 # ubmi3d <- cbind(ubmi_object@factors, lineage = sample_info$lineage)
 # options(warn = -1)
