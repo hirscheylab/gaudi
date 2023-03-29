@@ -74,11 +74,11 @@ expression <- t(expression_clean %>% filter(id %in% sample_info$DepMap_ID) %>% c
 methylation <- t(methylation_clean %>% filter(id %in% sample_info$DepMap_ID) %>% column_to_rownames("id"))
 mirna <- t(mirna_clean %>% filter(id %in% sample_info$DepMap_ID) %>% column_to_rownames("id"))
 metabolomics <- t(metabolomics_clean %>% filter(id %in% sample_info$DepMap_ID) %>% column_to_rownames("id"))
-# achilles <- t(achilles_clean %>% filter(id %in% sample_info$DepMap_ID) %>% column_to_rownames("id"))
+achilles <- t(achilles_clean %>% filter(id %in% sample_info$DepMap_ID) %>% column_to_rownames("id"))
 
 omics <- list(expression, methylation, mirna, metabolomics) #, achilles)
 
-ubmi_object <- ubmi(omics, compute_features = TRUE, min_pts = 10,
+ubmi_object <- ubmi(omics, compute_features = FALSE, min_pts = 10,
                     umap_params = list(metric = "cosine"),
                     umap_params_conc = list(metric = "cosine", n_components = 3))
 
