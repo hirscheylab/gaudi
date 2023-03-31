@@ -34,15 +34,21 @@ achilles <- achilles_train %>%
   tibble::column_to_rownames("id") %>%
   as.matrix()
 
-# colnames(methylation) <- paste0("tss_", colnames(methylation))
 colnames(achilles) <- paste0("dep_", colnames(achilles))
 
 ##
 
-# omics <- list(t(prism), t(achilles), t(expression), t(methylation), t(mirna), t(metabolomics)) 
-# drug_integration <- ubmi(omics)
-# 
-# plot_ubmi_grid(drug_integration)
+omics <- list(t(prism), t(achilles), t(expression), t(methylation), t(mirna), t(metabolomics))
+ubmi_object <- ubmi(omics, compute_features = FALSE, min_pts = 10,
+                    umap_params = list(metric = "cosine"),
+                    umap_params_conc = list(metric = "cosine", n_components = 2))
+
+plot_factors(ubmi_object)
+
+ggplot(ubmi_object@factors, aes(UMAP1, UMAP2, color = lineage)) +
+  geom_point() +
+  theme_bw() +
+  gghighlight::gghighlight(lineage == "skin")
 
 find_segments <- function(gene, min_percent = 5) {
   
