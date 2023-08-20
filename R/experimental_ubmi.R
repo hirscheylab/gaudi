@@ -98,8 +98,13 @@ MOFAobject <- MOFA2::prepare_mofa(
   training_options = TrainOptions
 )
 
-MOFAobject <- MOFA2::run_mofa(MOFAobject, use_basilisk = TRUE)
+MOFAobject <- MOFA2::run_mofa(MOFAobject) #, use_basilisk = TRUE)
 factors_mofa <- MOFA2::get_factors(MOFAobject)
 
 factorizations_mofa <- factors_mofa$group1
+
+ggplot2::ggplot(as.data.frame(factorizations_mofa), ggplot2::aes(Factor1, Factor2)) +
+  ggplot2::geom_point(size = 3) +
+  ggplot2::theme_bw() 
+
 
