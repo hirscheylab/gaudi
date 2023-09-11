@@ -5,9 +5,14 @@ ubmi <- function(omics,
                  min_pts = 10,
                  xgboost_params = list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95),
                  compute_features = TRUE,
+                 samples_in_rows = TRUE,
                  ...) {
   
-  omics <- align_omics(omics)
+  if (samples_in_rows) {
+    omics <- lapply(omics, t)
+  }
+  
+  # omics <- align_omics(omics)
   omics <- clean_feature_names(omics)
   
   # Factorization

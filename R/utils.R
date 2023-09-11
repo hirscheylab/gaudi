@@ -9,7 +9,7 @@ align_omics <- function(omics) {
     omics[[j]] <- omics[[j]][, which(apply(omics[[j]], 2, sd) > 0)]
   }
   
-  omics <- lapply(omics, FUN = function(x){t(x)})
+  # omics <- lapply(omics, FUN = function(x){t(x)})
   return(omics)
 }
 
@@ -62,5 +62,28 @@ drop_clusters <- function(object,
   
   if(validObject(object))
     return(object)
+}
+
+bootstrap_omics <- function(data, n, perturbation = 0.1) {
+  # Step 1: Calculate the number of synthetic samples to create
+  n_samples_to_create <- round(nrow(data) * n)
+  
+  # Step 2: Sample rows with replacement to create synthetic samples
+  synthetic_indices <- sample(1:nrow(data), n_samples_to_create, replace = TRUE)
+  synthetic_samples <- data[synthetic_indices ,]
+  
+  # Step 3: Apply perturbation to the synthetic samples
+  # The perturbation is applied by adding a random value between -perturbation and +perturbation
+  perturbation_matrix <- runif(n = n_samples_to_create * ncol(data), min = -perturbation, max = perturbation)
+  
+  # Reshape the perturbation matrix to match the dimensions of synthetic_samples
+  perturbation_matrix <- matrix(perturbation_matrix, nrow = n_samples_to_create, ncol = ncol(data))
+  
+  # Apply the perturbation
+  synthetic_samples <- synthetic_samples + perturbation_matrix
+  
+  combined_data <- rbind(data, synthetic_samples)
+  
+  return(combined_data)
 }
 

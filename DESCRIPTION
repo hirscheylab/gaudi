@@ -12,6 +12,8 @@ Description:
     The complex relationships between omics datasets are a major obstacle for linear integration methods. 
     UBMI (UMAP-based Multi-omics Integration) is a novel non-linear, unsupervised, and interpretable method 
     for integrating multi-omics data.
+Imports:
+    patchwork
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
