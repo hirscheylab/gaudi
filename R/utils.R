@@ -9,7 +9,7 @@ align_omics <- function(omics) {
     omics[[j]] <- omics[[j]][, which(apply(omics[[j]], 2, sd) > 0)]
   }
   
-  # omics <- lapply(omics, FUN = function(x){t(x)})
+  omics <- lapply(omics, FUN = function(x){t(x)})
   return(omics)
 }
 
@@ -85,5 +85,45 @@ bootstrap_omics <- function(data, n, perturbation = 0.1) {
   combined_data <- rbind(data, synthetic_samples)
   
   return(combined_data)
+}
+
+reassign_cluster_zero <- function(data, nearest_centroid = FALSE) {
+  # Step 1: Calculate the centroids of non-zero clusters
+  non_zero_clusters <- data %>% 
+    dplyr::filter(clust != 0)
+  
+  centroids <- non_zero_clusters %>%
+    dplyr::group_by(clust) %>% 
+    dplyr::summarise(centroid_x = median(UMAP1, na.rm = TRUE),
+                     centroid_y = median(UMAP2, na.rm = TRUE))
+  
+  # Step 2: Get data points in cluster 0
+  cluster_zero_points <- data %>% 
+    dplyr::filter(clust == 0)
+  
+  if (nrow(cluster_zero_points) > 0) {
+    if (nearest_centroid) {
+      # Step 3: For each point in cluster 0, calculate the distance to each centroid and reassign
+      for(i in 1:nrow(cluster_zero_points)) {
+        point <- cluster_zero_points[i, c("UMAP1", "UMAP2")]
+        distances <- apply(centroids[, -1], 1, function(centroid) sqrt((point[1] - centroid[1])^2 + (point[2] - centroid[2])^2))
+        nearest_cluster <- centroids[which.min(unlist(distances)), "clust"]
+        cluster_zero_points[i, "clust"] <- nearest_cluster
+      }
+    } else {
+      # Step 3: For each point in cluster 0, calculate the distance to each point and reassign
+      for(i in 1:nrow(cluster_zero_points)) {
+        point <- cluster_zero_points[i, c("UMAP1", "UMAP2")]
+        distances <- apply(non_zero_clusters[, -3], 1, function(data) sqrt((point[1] - data[1])^2 + (point[2] - data[2])^2))
+        nearest_cluster <- non_zero_clusters[which.min(unlist(distances)), "clust"]
+        cluster_zero_points[i, "clust"] <- nearest_cluster
+      }
+    }
+    
+    # Step 4: Combine the data with re-assigned clusters and non-zero clusters
+    data <- dplyr::bind_rows(non_zero_clusters, cluster_zero_points)
+  }
+  
+  return(data)
 }
 

@@ -12,7 +12,7 @@ ubmi <- function(omics,
     omics <- lapply(omics, t)
   }
   
-  # omics <- align_omics(omics)
+  omics <- align_omics(omics)
   omics <- clean_feature_names(omics)
   
   # Factorization
@@ -29,6 +29,13 @@ ubmi <- function(omics,
   umap_clusters <- data.frame(umap_integrated[[1]], clust = hdbscan_labels$cluster)
   colnames(umap_clusters)[1:(ncol(umap_clusters) - 1)] <- paste0("UMAP", 1:(ncol(umap_clusters) - 1))
   message("Computing multi-omics clustering... OK!")
+  
+  # Re-assign cluster zero (noise)
+  umap_clusters <- reassign_cluster_zero(umap_clusters)
+  
+  # Compute silhouette score
+  sil_score <- cluster::silhouette(umap_clusters$clust, dist(umap_clusters[, 1:2]))
+  mean_sil_score <- mean(sil_score[, 3])
   
   if (compute_features) {
     # Metagenes
@@ -52,6 +59,7 @@ ubmi <- function(omics,
   ubmi_res <- new("UBMIObject",
                   factors = umap_clusters,
                   clusters = umap_clusters$clust,
+                  silhouette_score = mean_sil_score,
                   single_factors = umap_factors,
                   metagenes_factor1 = if(compute_features) shaps1 else data.frame(),
                   metagenes_factor1_rank = if(compute_features) xgboost_metagenesUMAP1[[1]][[2]] else character(),

@@ -13,7 +13,8 @@ Description:
     UBMI (UMAP-based Multi-omics Integration) is a novel non-linear, unsupervised, and interpretable method 
     for integrating multi-omics data.
 Imports:
-    patchwork
+  cluster,
+  patchwork
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
