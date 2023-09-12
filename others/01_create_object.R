@@ -53,6 +53,16 @@ for (i in 1:6) {
   
 ubmi_object <- readRDS(file = "others/optimized_ubmi.Rds")
 plot_factors(ubmi_object)
-# plot_metagenes(ubmi_object)
+
+####
+ubmi_object <- ubmi(omics, 
+                    umap_params = list(n_neighbors = floor(sqrt(131)), n_components = 10, pca = 50), 
+                    umap_params_conc = list(n_neighbors = floor(sqrt(131)), min_dist = 0.1),
+                    min_pts = 5,
+                    compute_features = FALSE)
+
+plot_factors(ubmi_object)
+
+
 
   
