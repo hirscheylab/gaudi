@@ -4,16 +4,8 @@ library(survival)
 library(survminer)
 library(finalfit)
 
-ubmi_object <- readRDS(file = "others/umap_optimized_clinical.Rds")
-
-# Load data
-## Cluster data
-multiomics_clusters <- ubmi_object@factors %>%
-  as.data.frame() %>% 
-  tibble::rownames_to_column("id") %>% 
-  dplyr::mutate(clust = case_when(clust %in% c(1,2) ~ "high_cluster",
-                                  clust %in% c(5,8) ~ "low_cluster",
-                                  TRUE ~ "others"))
+multiomics_clusters <- readRDS(file = "others/umap_optimized_clinical.Rds") %>% 
+  dplyr::rename(id = sample)
 
 ## Clinical data
 clinical <- readxl::read_xlsx("/Users/pol/Dropbox/compare_clusters/data/target/TARGET_AML_ClinicalData_Discovery_20221108.xlsx") %>% 
@@ -24,15 +16,14 @@ clinical <- readxl::read_xlsx("/Users/pol/Dropbox/compare_clusters/data/target/T
                 status_overall = ifelse(`Vital Status` == "Alive", 0, 1),
                 time_relapse = `Event Free Survival Time in Days`/365,
                 time_overall = `Overall Survival Time in Days`/365) %>% 
-  dplyr::rename(Risk = `Risk group`,
+  dplyr::rename(Risk = risk_group,
                 Age = `Age at Diagnosis in Days`,
                 mutation = `Primary Cytogenetic Code`) %>% 
   # We carefully choose our reference groups for "Risk", "clust", and "mutation" (see below)
-  dplyr::mutate(Risk = factor(Risk, levels = c("Standard Risk", "Unknown", "Low Risk", "High Risk")),
-                clust = factor(clust, levels = c("others", "low_cluster", "high_cluster")),
+  dplyr::mutate(Risk = factor(Risk, levels = c("LR1", "LR2", "HR")),
+                # clust = factor(clust, levels = c("others", "low_cluster", "high_cluster")),
                 mutation = factor(mutation, levels = c("Normal", "inv(16)", "MLL", "t(8;21)", "Other", "Unknown"))) %>% 
-  dplyr::select(id, clust, status_relapse, status_overall, time_relapse, time_overall, Risk, Age, mutation) %>% 
-  tidyr::drop_na()
+  dplyr::select(id, clust = cluster, status_relapse, status_overall, time_relapse, time_overall, Risk, Age, mutation)
 
 table(clinical$status_relapse, clinical$clust)
 
@@ -163,8 +154,8 @@ fit_multi_results <- bind_rows(fit_relapse, fit_overall) %>%
                 log_hr = log(HR),
                 log_lwr = log(lwr),
                 log_upr = log(upr)) %>% 
-  dplyr::filter(!(grepl("Unknown", explanatory) | grepl("Other", explanatory))) %>% 
-  dplyr::filter(explanatory %in% c("low_cluster", "high_cluster", "High Risk", "Low Risk"))
+  dplyr::filter(!(grepl("Unknown", explanatory) | grepl("Other", explanatory))) #%>% 
+  # dplyr::filter(explanatory %in% c("low_cluster", "high_cluster", "High Risk", "Low Risk"))
 
 ggplot(fit_multi_results, aes(log_hr, explanatory, label = pval)) +
   geom_vline(xintercept = 0, color = "grey", linetype = "dashed") + # log(1)
@@ -185,8 +176,8 @@ ggplot(fit_multi_results, aes(log_hr, explanatory, label = pval)) +
 
 # Kaplan–Meier plots
 clinical_sub <- clinical %>% 
-  dplyr::filter(clust %in% c("low_cluster", "high_cluster")) #%>%
-# dplyr::filter(clust %in% c("Cluster_1", "Cluster_8")) %>% 
+  # dplyr::filter(clust %in% c("low_cluster", "high_cluster")) #%>%
+dplyr::filter(clust %in% c("Cluster 1", "Cluster 2", "Cluster 8", "Cluster 5", "Cluster 3"))
 # dplyr::filter(clust %in% c("Cluster_2", "Cluster_5"))
 
 ## Relapse
@@ -258,8 +249,8 @@ p
 # dev.off()
 
 # Compare Risk and Cluster
-clinical_sub <- clinical_sub %>% 
-  dplyr::mutate(Risk = factor(Risk, levels = c("Low Risk", "Standard Risk", "High Risk")))
+# clinical_sub <- clinical_sub %>% 
+#   dplyr::mutate(Risk = factor(Risk, levels = c("Low Risk", "Standard Risk", "High Risk")))
 
 integer_breaks <- function(n = 5, ...) {
   fxn <- function(x) {
