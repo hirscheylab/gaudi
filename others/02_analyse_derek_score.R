@@ -5,7 +5,21 @@ library(survminer)
 library(finalfit)
 
 multiomics_clusters <- readRDS(file = "others/umap_optimized_clinical.Rds") %>% 
-  dplyr::rename(id = sample)
+  dplyr::rename(id = sample) %>% 
+  dplyr::mutate(cluster = dplyr::case_when(cluster %in% c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 9", "Cluster 6") ~ "Cluster HR",
+                                           cluster %in% c("Cluster 8", "Cluster 5") ~ "Cluster LR",
+                                           TRUE ~ cluster))
+
+ubmi_object@factors <- ubmi_object@factors %>% 
+  as.data.frame() %>% 
+  dplyr::mutate(clust = paste0("Cluster ", clust),
+                clust = dplyr::case_when(clust %in% c("Cluster 1", "Cluster 2", "Cluster 3", "Cluster 9", "Cluster 6") ~ "Cluster HR",
+                                           clust %in% c("Cluster 8", "Cluster 5") ~ "Cluster LR",
+                                           TRUE ~ "Cluster Neutral"))
+
+ggplot2::ggplot(ubmi_object@factors, ggplot2::aes(UMAP1, UMAP2)) +
+  ggplot2::geom_point(ggplot2::aes(fill = clust), pch = 21, size = 3, alpha = 0.8, color = "black") +
+  ggplot2::theme_bw()
 
 ## Clinical data
 clinical <- readxl::read_xlsx("/Users/pol/Dropbox/compare_clusters/data/target/TARGET_AML_ClinicalData_Discovery_20221108.xlsx") %>% 
@@ -176,9 +190,9 @@ ggplot(fit_multi_results, aes(log_hr, explanatory, label = pval)) +
 
 # Kaplan–Meier plots
 clinical_sub <- clinical %>% 
-  # dplyr::filter(clust %in% c("low_cluster", "high_cluster")) #%>%
-dplyr::filter(clust %in% c("Cluster 1", "Cluster 2", "Cluster 8", "Cluster 5", "Cluster 3"))
-# dplyr::filter(clust %in% c("Cluster_2", "Cluster_5"))
+  # dplyr::filter(clust %in% c("Cluster 1", "Cluster 2", "Cluster 8", "Cluster 5", "Cluster 3"))
+  # dplyr::filter(clust %in% c("Cluster 99", "Cluster 5", "Cluster 8"))
+  dplyr::filter(clust %in% c("Cluster LR", "Cluster HR"))
 
 ## Relapse
 model_relapse <- survfit(Surv(time_relapse, status_relapse) ~ clust, data = clinical_sub)
@@ -275,13 +289,13 @@ ggplot(clinical_sub %>% drop_na(), aes(Risk, after_stat(count), fill = clust)) +
         panel.grid = element_blank()) 
 
 ####
-poma_obj <- POMA::PomaCreateObject(metadata = data.frame(id = multiomics_clusters$id, 
-                                                         cluster = multiomics_clusters$clust), 
-                                   features = do.call(cbind, omics))
-
-limma_res <- POMA::PomaLimma(poma_obj, contrast = "high_cluster-low_cluster")
-
-POMA::PomaBoxplots(poma_obj, x = "features", feature_name = limma_res$feature[1:10])
-
-aaa <- ddh::make_cca_genes_table(input = list(content = c("MAK16", "NOP16", "KCNMB1")))
+# poma_obj <- POMA::PomaCreateObject(metadata = data.frame(id = multiomics_clusters$id, 
+#                                                          cluster = multiomics_clusters$clust), 
+#                                    features = do.call(cbind, omics))
+# 
+# limma_res <- POMA::PomaLimma(poma_obj, contrast = "high_cluster-low_cluster")
+# 
+# POMA::PomaBoxplots(poma_obj, x = "features", feature_name = limma_res$feature[1:10])
+# 
+# aaa <- ddh::make_cca_genes_table(input = list(content = c("MAK16", "NOP16", "KCNMB1")))
 
