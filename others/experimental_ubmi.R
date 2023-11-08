@@ -30,9 +30,14 @@ compute_inter_modal_distances <- function(embeddings1, embeddings2) {
 integrate_omics <- function(omics) {
   n_datasets <- length(omics)
 
+  # numeric_vars_count <- lapply(omics, function(data) sum(sapply(data, is.numeric)))
+  # distances_umap <- lapply(numeric_vars_count, function(x) {if(x == 0) {return('jaccard')} else {return('euclidean')}})
+  # distances_umap <- list('euclidean', 'hamming')
+  
   # Step 1: Compute individual UMAP embeddings for each dataset
   umap_list <- lapply(omics, function(data) uwot::umap(data))
-
+  # umap_list <- mapply(function(data, distance) uwot::umap(data, metric = distance), omics, distances_umap)
+  
   # Step 2: Calculate intra- and inter-modal distances
   # Define the total size of the joint_dist_matrix
   total_size <- sum(sapply(omics, nrow))
@@ -46,7 +51,7 @@ integrate_omics <- function(omics) {
   # Fill joint_dist_matrix
   start_row <- 1
 
-  for(i in 1:(n_datasets - 1)) { # we use n_datasets-1 because the last dataset won't need to compare to any other datasets
+  for (i in 1:(n_datasets - 1)) { # we use n_datasets-1 because the last dataset won't need to compare to any other datasets
 
     end_row <- start_row + nrow(omics[[i]]) - 1
 
