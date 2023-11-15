@@ -1,12 +1,11 @@
 
 ubmi <- function(omics,
-                 umap_params = list(n_neighbors = 15, n_components = 4, pca = 50),
+                 umap_params = list(n_neighbors = 15, n_components = 4, pca = min(nrow(omics[[1]]), ncol(omics[[1]]))),
                  umap_params_conc = list(n_neighbors = 15, n_components = 2),
                  min_pts = 10,
                  xgboost_params = list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95),
                  compute_features = TRUE,
-                 samples_in_rows = TRUE,
-                 ...) {
+                 samples_in_rows = TRUE) {
   
   if (samples_in_rows) {
     omics <- lapply(omics, t)
