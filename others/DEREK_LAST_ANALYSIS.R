@@ -1,4 +1,6 @@
 
+library(tidyverse)
+
 load("/Users/pol/Dropbox/gmv_project/data/22Q2/exp_mth_mir_norm_TRUE.RData")
 
 sample_info_aml <- sample_info %>%
@@ -99,4 +101,46 @@ aml_factors <- ubmi_aml@factors %>% rownames_to_column("id") %>% left_join(sampl
   dplyr::select(id, UMAP1, UMAP2, clust, cell_name, age)
 
 # save(aml_factors, limma_res, gsea_res, file = "/Users/pol/Desktop/MANDEL/dz_aml_depmap_multiomics_results.RData")
+
+load(file = "/Users/pol/Desktop/MANDEL/dz_aml_depmap_multiomics_results.RData")
+load("/Users/pol/Dropbox/gmv_project/data/22Q2/multiomics_data_processed_all.RData")
+
+library(POMA)
+
+poma_obj <- PomaCreateObject(metadata = aml_factors %>% 
+                               dplyr::filter(id %in% achilles_clean[,1]) %>% 
+                               dplyr::mutate(clust = paste0("cluster_", clust)) %>% 
+                               dplyr::select(id, clust),
+                             features = achilles_clean %>% 
+                               dplyr::filter(id %in% aml_factors[,1]) %>% 
+                               dplyr::select(-id)
+                             )
+
+limma_res2 <- poma_obj %>% 
+  PomaLimma(contrast = "cluster_1-cluster_2") %>% 
+  dplyr::mutate(feature = gsub("_.*", "", feature))
+
+ordered_genes <- limma_res2 %>% dplyr::pull(logFC) # NOT AUTO - DRAFT
+names(ordered_genes) <- limma_res2 %>% dplyr::pull(feature) %>% toupper() # NOT AUTO - DRAFT
+ordered_genes <- sort(ordered_genes, decreasing = TRUE)
+
+gsea_res_dep <- fgsea::fgsea(pathways = ddh_pathways, stats = ordered_genes, eps = 1e-50,
+                             minSize = 2, maxSize = length(ordered_genes) - 1, scoreType = "std")
+
+gsea_res <- gsea_res_dep %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(leadingEdge = paste0(leadingEdge, collapse = ", ")) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(Direction = ifelse(NES > 0, "Up", "Down"),
+                `Gene Set` = gsub("_.*", "", pathway)) %>%
+  dplyr::rowwise() %>%
+  dplyr::mutate(pathway = gsub(paste0(`Gene Set`, "_"), "", pathway)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(pathway = stringr::str_replace_all(pathway, "_", " ")) %>%
+  dplyr::mutate(pathway = stringr::str_to_title(pathway)) %>%
+  dplyr::select(Pathway = pathway, NES, Pval = pval, adjPval = padj,
+                Direction, `Pathway Size` = size, Genes = leadingEdge, `Gene Set`) %>%
+  dplyr::arrange(Pval)
+
+# save(limma_res2, gsea_res, file = "/Users/pol/Desktop/yabadabaaaa.RData")
 
