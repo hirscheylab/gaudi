@@ -48,6 +48,12 @@ ubmi <- function(omics,
   message("Computing multi-omics factorization... OK!")
   
   # Clustering
+  if (is.null(min_pts)) {
+    min_pts <- floor(0.03 * nrow(omics[[1]])) # 5/170 ~ 0.03 (empirical factor)
+  }
+  if (min_pts < 2) {
+    min_pts <- 2
+  }
   hdbscan_labels <- lapply(umap_integrated, function(x) dbscan::hdbscan(x, minPts = min_pts))[[1]]
   
   umap_clusters <- data.frame(umap_integrated[[1]], clust = hdbscan_labels$cluster)
