@@ -1,4 +1,7 @@
 
+#' Plot Metagenes
+#'
+#' @export
 plot_metagenes <- function(object,
                            component = 1,
                            top = 10,
@@ -59,6 +62,9 @@ plot_metagenes <- function(object,
                                           linetype = "dashed", color = "gray50", linewidth = 0.5)}
 }
 
+#' Plot Metagenes Clusters
+#'
+#' @export
 plot_metagenes_clusters <- function(object,
                                     component = 1,
                                     ...) {
@@ -93,6 +99,9 @@ plot_metagenes_clusters <- function(object,
     NULL
 }
          
+#' Plot Factors
+#'
+#' @export
 plot_factors <- function(object,
                          label_size = 0,
                          draw_lines = FALSE,
@@ -142,6 +151,9 @@ plot_factors <- function(object,
   
 }
 
+#' Plot grid
+#'
+#' @export
 plot_ubmi_grid <- function(object,
                            # top_features = 10,
                            cluster_label_size = 4,

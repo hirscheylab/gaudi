@@ -1,4 +1,7 @@
 
+#' Align omics
+#'
+#' @export
 align_omics <- function(omics) {
   samples <- colnames(omics[[1]])
   for (j in 1:length(omics)) {
@@ -13,6 +16,9 @@ align_omics <- function(omics) {
   return(omics)
 }
 
+#' Clean names
+#'
+#' @export
 clean_feature_names <- function(omics) {
   omics <- lapply(omics, FUN = function(x){
     colnames(x) <- gsub("\\.", "_", colnames(x))
@@ -22,6 +28,9 @@ clean_feature_names <- function(omics) {
   return(omics)
 }
 
+#' UMAP factors
+#'
+#' @export
 umap_factorization <- function(umap_params = list()) {
   umap_factors <- do.call(uwot::umap, umap_params)
   umap_factors <- data.frame(umap_factors)
@@ -29,6 +38,9 @@ umap_factorization <- function(umap_params = list()) {
   return(umap_factors)
 }
 
+#' XGBOOST
+#'
+#' @export
 xgboost_model <- function(x, y, xgboost_params = list()) {
   mod <- xgboost::xgboost(data = x,
                           label = as.matrix(y),
@@ -49,6 +61,9 @@ xgboost_model <- function(x, y, xgboost_params = list()) {
   return(list(shap_contrib_nonzero, ranked_col))
 }
 
+#' Drop clusts
+#'
+#' @export
 drop_clusters <- function(object,
                           clusters = 0,
                           ...) {
@@ -64,6 +79,9 @@ drop_clusters <- function(object,
     return(object)
 }
 
+#' Bootstrap
+#'
+#' @export
 bootstrap_omics <- function(data, n, perturbation = 0.1) {
   # Step 1: Calculate the number of synthetic samples to create
   n_samples_to_create <- round(nrow(data) * n)
@@ -87,6 +105,9 @@ bootstrap_omics <- function(data, n, perturbation = 0.1) {
   return(combined_data)
 }
 
+#' Reassign
+#'
+#' @export
 reassign_cluster_zero <- function(data, nearest_centroid = FALSE) {
   # Step 1: Calculate the centroids of non-zero clusters
   non_zero_clusters <- data %>% 
