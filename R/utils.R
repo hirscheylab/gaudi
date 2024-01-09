@@ -1,4 +1,3 @@
-
 #' Align omics
 #'
 #' @export

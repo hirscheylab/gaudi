@@ -13,6 +13,8 @@ ubmi(
   xgboost_params = list(lambda = 0, eta = 0.5, gamma = 50, max_depth = 10, subsample =
     0.95),
   compute_features = TRUE,
+  combine_omics = FALSE,
+  clean_feature_names = FALSE,
   samples_in_rows = TRUE
 )
 }

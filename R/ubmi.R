@@ -29,6 +29,8 @@ ubmi <- function(omics,
                  min_pts = 5,
                  xgboost_params = list(lambda = 0, eta = 0.5, gamma = 50, max_depth = 10, subsample = 0.95),
                  compute_features = TRUE,
+                 combine_omics = FALSE,
+                 clean_feature_names = FALSE,
                  samples_in_rows = TRUE) {
   
   if (samples_in_rows) {
@@ -36,7 +38,10 @@ ubmi <- function(omics,
   }
   
   omics <- align_omics(omics)
-  # omics <- clean_feature_names(omics)
+  
+  if (clean_feature_names) {
+    omics <- clean_feature_names(omics)
+  }
   
   # Factorization
   umap_factors <- lapply(omics, function(x) umap_factorization(umap_params = c(list(X = x), umap_params)))
@@ -64,8 +69,10 @@ ubmi <- function(omics,
   
   # Metagenes
   if (compute_features) {
-    # features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
-    # omics <- c(list(features), omics)
+    if (combine_omics) {
+      features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
+      omics <- c(list(features), omics) 
+    }
     
     xgboost_fixed_params <- list(objective = "reg:squarederror")
     metagenes <- list()

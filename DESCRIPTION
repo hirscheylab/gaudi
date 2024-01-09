@@ -1,6 +1,6 @@
 Package: ubmi
 Title: UMAP-based Multi-omics Integration
-Version: 0.1.4
+Version: 0.1.5
 Authors@R: 
     c(person(given = "Pol",
              family = "Castellano-Escuder",
@@ -15,12 +15,13 @@ Description:
 Imports:
   cluster,
   dplyr,
+  patchwork,
   uwot,
   xgboost,
   SHAPforxgboost,
-  patchwork,
   tibble,
-  randomForest,
+  tidyr
+Suggests:
   tidyverse
 License: MIT + file LICENSE
 Encoding: UTF-8
