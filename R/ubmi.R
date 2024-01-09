@@ -1,4 +1,5 @@
-#' Unsupervised Multi-Omics Data Integration using UMAP and HDBSCAN
+
+#' UMAP-Based Multi-Omics Data Integration
 #'
 #' @description
 #' \code{ubmi} performs unsupervised integration of multi-omics data. 
@@ -12,7 +13,6 @@
 #' @param min_pts The minimum number of points for a cluster in HDBSCAN. Defaults to 10.
 #' @param xgboost_params A list of parameters for XGBoost modeling. Defaults to \code{list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95)}.
 #' @param compute_features Logical. Indicates whether to compute metagenes using XGBoost. Defaults to TRUE.
-#' @param reassign_cluster_zero Logical. Indicates whether to reassign samples in cluster 0 (noise) to other clusters. Defaults to FALSE.
 #' @param samples_in_rows Logical. Indicates whether samples are in rows (TRUE) or columns (FALSE) of the omics matrices. Defaults to TRUE.
 #'
 #' @return A \code{UBMIObject} containing the results of the integration, including factors, clusters, silhouette scores, and metagenes.
@@ -26,10 +26,9 @@
 ubmi <- function(omics,
                  umap_params = list(n_neighbors = 15, n_components = 4, pca = min(nrow(omics[[1]]), ncol(omics[[1]]))),
                  umap_params_conc = list(n_neighbors = 15, n_components = 2),
-                 min_pts = 10,
-                 xgboost_params = list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95),
+                 min_pts = 5,
+                 xgboost_params = list(lambda = 0, eta = 0.5, gamma = 50, max_depth = 10, subsample = 0.95),
                  compute_features = TRUE,
-                 reassign_cluster_zero = FALSE,
                  samples_in_rows = TRUE) {
   
   if (samples_in_rows) {
@@ -51,54 +50,51 @@ ubmi <- function(omics,
   if (is.null(min_pts)) {
     min_pts <- floor(0.03 * nrow(omics[[1]])) # 5/170 ~ 0.03 (empirical factor)
   }
-  if (min_pts < 2) {
-    min_pts <- 2
-  }
+  min_pts <- max(min_pts, 2)
+
   hdbscan_labels <- lapply(umap_integrated, function(x) dbscan::hdbscan(x, minPts = min_pts))[[1]]
   
   umap_clusters <- data.frame(umap_integrated[[1]], clust = hdbscan_labels$cluster)
   colnames(umap_clusters)[1:(ncol(umap_clusters) - 1)] <- paste0("UMAP", 1:(ncol(umap_clusters) - 1))
   message("Computing multi-omics clustering... OK!")
   
-  if (reassign_cluster_zero) {
-    # Re-assign cluster zero (noise)
-    umap_clusters <- reassign_cluster_zero(umap_clusters) 
-  }
-  
   # Compute silhouette score
   sil_score <- cluster::silhouette(umap_clusters$clust, dist(umap_clusters[, 1:2]))
   mean_sil_score <- mean(sil_score[, 3])
   
+  # Metagenes
   if (compute_features) {
-    # Metagenes
-    message("Computing metagenes...")
-    features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
-    omics <- c(list(features), omics)
+    # features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
+    # omics <- c(list(features), omics)
     
     xgboost_fixed_params <- list(objective = "reg:squarederror")
-    
-    xgboost_metagenesUMAP1 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP1, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-    message("Metagenes associated with the 1st dimension of the manifold... OK!")
-    xgboost_metagenesUMAP2 <- lapply(omics, function(x) xgboost_model(x, y = umap_clusters$UMAP2, xgboost_params = c(xgboost_fixed_params, xgboost_params)))
-    message("Metagenes associated with the 2nd dimension of the manifold... OK!")
-    
-    shaps1 <- data.frame(xgboost_metagenesUMAP1[[1]][[1]])
-    if (ncol(shaps1) == 1) colnames(shaps1) <- xgboost_metagenesUMAP1[[1]][[2]][1]
-    shaps2 <- data.frame(xgboost_metagenesUMAP2[[1]][[1]])
-    if (ncol(shaps2) == 1) colnames(shaps2) <- xgboost_metagenesUMAP2[[1]][[2]][1]
+    metagenes <- list()
+    for (i in 1:length(omics)) {
+      for (j in 1:(ncol(umap_clusters) - 1)) {
+        metagenes_tmp <- xgboost_model(x = omics[[i]], y = umap_clusters[,j], xgboost_params = c(xgboost_fixed_params, xgboost_params)) %>% 
+          as.data.frame() %>% 
+          tibble::rownames_to_column("feature")
+        if (j > 1) {
+          metagenes_omic <- metagenes_omic %>% dplyr::inner_join(metagenes_tmp, by = "feature")
+        } else {
+          metagenes_omic <- metagenes_tmp
+        }
+      }
+      colnames(metagenes_omic) <- c("feature", paste0("contrib", 1:(ncol(umap_clusters) - 1)))
+      metagenes_omic <- metagenes_omic %>% 
+        tibble::column_to_rownames("feature") %>% 
+        dplyr::arrange(dplyr::desc(abs(contrib1)))
+      metagenes[[i]] <- metagenes_omic
+    }
+    message("Computing metagenes for each individual omics dataset... OK!")
   }
   
   ubmi_res <- new("UBMIObject",
                   factors = umap_clusters,
                   clusters = umap_clusters$clust,
                   silhouette_score = mean_sil_score,
-                  single_factors = umap_factors,
-                  metagenes_factor1 = if(compute_features) shaps1 else data.frame(),
-                  metagenes_factor1_rank = if(compute_features) xgboost_metagenesUMAP1[[1]][[2]] else character(),
-                  metagenes_factor2 = if(compute_features) shaps2 else data.frame(),      
-                  metagenes_factor2_rank = if(compute_features) xgboost_metagenesUMAP2[[1]][[2]] else character(),        
-                  single_metagenes_factor1 = if(compute_features) xgboost_metagenesUMAP1[-1] else list(),       
-                  single_metagenes_factor2 = if(compute_features) xgboost_metagenesUMAP2[-1] else list(),
+                  individual_factors = umap_factors,
+                  metagenes = if(compute_features) metagenes else list(),
                   ubmiVersion = as.character(packageVersion("ubmi"))
   )
   

@@ -51,14 +51,9 @@ xgboost_model <- function(x, y, xgboost_params = list()) {
                           early_stopping_rounds = 8)
   
   shap_values <- SHAPforxgboost::shap.values(xgb_model = mod, X_train = x)
-  
-  shap_contrib <- shap_values$shap_score
-  ranked_col <- names(colMeans(abs(shap_contrib))[order(colMeans(abs(shap_contrib)), decreasing = TRUE)])
-  
-  shap_contrib_df <- data.frame(shap_contrib)
-  shap_contrib_nonzero <- shap_contrib_df[, apply(shap_contrib_df, 2, function(x) !all(x == 0, na.rm = TRUE))]
-  
-  return(list(shap_contrib_nonzero, ranked_col))
+  shap_contrib <- as.matrix(shap_values$mean_shap_score)
+
+  return(shap_contrib)
 }
 
 #' Drop clusts

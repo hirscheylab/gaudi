@@ -22,19 +22,9 @@ It allows for easy access to both combined and individual omics data results, fa
 
 \item{\code{silhouette_score}}{A numeric value representing the average silhouette score of the clustering.}
 
-\item{\code{single_factors}}{A list of UMAP factors for individual omics datasets.}
+\item{\code{individual_factors}}{A list of UMAP factors for individual omics datasets.}
 
-\item{\code{metagenes_factor1}}{A \code{data.frame} containing the metagenes associated with the first dimension of the UMAP manifold.}
-
-\item{\code{metagenes_factor1_rank}}{A character vector indicating the ranking of metagenes associated with the first dimension.}
-
-\item{\code{metagenes_factor2}}{A \code{data.frame} containing the metagenes associated with the second dimension of the UMAP manifold.}
-
-\item{\code{metagenes_factor2_rank}}{A character vector indicating the ranking of metagenes associated with the second dimension.}
-
-\item{\code{single_metagenes_factor1}}{A list containing metagenes for individual omics datasets associated with the first dimension.}
-
-\item{\code{single_metagenes_factor2}}{A list containing metagenes for individual omics datasets associated with the second dimension.}
+\item{\code{metagenes}}{A list containing metagenes for individual omics datasets.}
 
 \item{\code{ubmiVersion}}{A character string indicating the version of the UBMI package used for the analysis.}
 }}

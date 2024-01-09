@@ -2,18 +2,17 @@
 % Please edit documentation in R/ubmi.R
 \name{ubmi}
 \alias{ubmi}
-\title{Unsupervised Multi-Omics Data Integration using UMAP and HDBSCAN}
+\title{UMAP-Based Multi-Omics Data Integration}
 \usage{
 ubmi(
   omics,
   umap_params = list(n_neighbors = 15, n_components = 4, pca = min(nrow(omics[[1]]),
     ncol(omics[[1]]))),
   umap_params_conc = list(n_neighbors = 15, n_components = 2),
-  min_pts = 10,
-  xgboost_params = list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample =
+  min_pts = 5,
+  xgboost_params = list(lambda = 0, eta = 0.5, gamma = 50, max_depth = 10, subsample =
     0.95),
   compute_features = TRUE,
-  reassign_cluster_zero = FALSE,
   samples_in_rows = TRUE
 )
 }
@@ -29,8 +28,6 @@ ubmi(
 \item{xgboost_params}{A list of parameters for XGBoost modeling. Defaults to \code{list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95)}.}
 
 \item{compute_features}{Logical. Indicates whether to compute metagenes using XGBoost. Defaults to TRUE.}
-
-\item{reassign_cluster_zero}{Logical. Indicates whether to reassign samples in cluster 0 (noise) to other clusters. Defaults to FALSE.}
 
 \item{samples_in_rows}{Logical. Indicates whether samples are in rows (TRUE) or columns (FALSE) of the omics matrices. Defaults to TRUE.}
 }
