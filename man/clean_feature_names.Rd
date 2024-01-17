@@ -2,10 +2,18 @@
 % Please edit documentation in R/utils.R
 \name{clean_feature_names}
 \alias{clean_feature_names}
-\title{Clean names}
+\title{Clean Feature Names}
 \usage{
 clean_feature_names(omics)
 }
+\arguments{
+\item{omics}{A list of data frames or matrices representing omics datasets.
+Each element in the list should have column names that potentially need cleaning.}
+}
+\value{
+A list of data frames or matrices, similar to the input but with cleaned column names.
+All periods ('.') and hyphens ('-') in the column names are replaced with underscores ('_').
+}
 \description{
-Clean names
+This function standardizes feature names by replacing certain characters with underscores.
 }

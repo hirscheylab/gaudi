@@ -2,10 +2,19 @@
 % Please edit documentation in R/utils.R
 \name{reassign_cluster_zero}
 \alias{reassign_cluster_zero}
-\title{Reassign}
+\title{Reassign Cluster Zero}
 \usage{
 reassign_cluster_zero(data, nearest_centroid = FALSE)
 }
+\arguments{
+\item{data}{A data frame.}
+
+\item{nearest_centroid}{Logical, defaulting to FALSE. If TRUE, reassigns points in cluster 0 to the nearest centroid
+of other clusters. If FALSE, reassigns based on the nearest point in any other cluster.}
+}
+\value{
+A data frame identical to the input but with updated cluster assignments for points initially in cluster 0.
+}
 \description{
-Reassign
+This function reassigns data points in cluster 0 to the nearest cluster based on either centroid distance or individual point distance.
 }

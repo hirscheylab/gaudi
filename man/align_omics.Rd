@@ -2,10 +2,19 @@
 % Please edit documentation in R/utils.R
 \name{align_omics}
 \alias{align_omics}
-\title{Align omics}
+\title{Align Omics Datasets}
 \usage{
 align_omics(omics)
 }
+\arguments{
+\item{omics}{A list of data frames or matrices, where each element represents a different omics dataset.
+Each dataset should have the same set of samples (columns) but can have different features (rows).}
+}
+\value{
+A list of data frames or matrices, where each dataset is transposed and aligned in terms of samples.
+Features with zero standard deviation across samples are removed.
+}
 \description{
-Align omics
+This function aligns multiple omics datasets by ensuring they have the same set of samples and removing features with zero standard deviation.
+It also transposes each dataset so that samples become rows and features become columns, which is a common format for omics data analysis.
 }

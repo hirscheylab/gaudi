@@ -2,7 +2,7 @@
 % Please edit documentation in R/ubmi.R
 \name{ubmi}
 \alias{ubmi}
-\title{UMAP-Based Multi-Omics Data Integration}
+\title{UMAP-based Multi-omics Integration}
 \usage{
 ubmi(
   omics,
@@ -15,36 +15,44 @@ ubmi(
   compute_features = TRUE,
   combine_omics = FALSE,
   clean_feature_names = FALSE,
-  samples_in_rows = TRUE
+  samples_in_rows = TRUE,
+  reassign_cluster_zero = FALSE
 )
 }
 \arguments{
-\item{omics}{A list of omics data matrices, with each matrix representing a different omics data type.}
+\item{omics}{A \code{list} of omics data frames or matrices.}
 
-\item{umap_params}{A list of parameters for individual UMAP embeddings. Defaults to \code{list(n_neighbors = 15, n_components = 4)}.}
+\item{umap_params}{Parameters for UMAP factorization of individual omics datasets.}
 
-\item{umap_params_conc}{A list of parameters for concatenated UMAP embeddings. Defaults to \code{list(n_neighbors = 15, n_components = 2)}.}
+\item{umap_params_conc}{Parameters for UMAP factorization of concatenated omics data.}
 
-\item{min_pts}{The minimum number of points for a cluster in HDBSCAN. Defaults to 10.}
+\item{min_pts}{Minimum number of points per cluster in HDBSCAN clustering.}
 
-\item{xgboost_params}{A list of parameters for XGBoost modeling. Defaults to \code{list(lambda = 1, eta = 0.3, gamma = 100, max_depth = 10, subsample = 0.95)}.}
+\item{xgboost_params}{Parameters for XGBoost model used in metagenes computation.}
 
-\item{compute_features}{Logical. Indicates whether to compute metagenes using XGBoost. Defaults to TRUE.}
+\item{compute_features}{Logical indicating whether to compute metagenes.}
 
-\item{samples_in_rows}{Logical. Indicates whether samples are in rows (TRUE) or columns (FALSE) of the omics matrices. Defaults to TRUE.}
+\item{combine_omics}{Logical indicating whether to combine combined omics metagenes.}
+
+\item{clean_feature_names}{Logical indicating whether to clean feature names in omics datasets.}
+
+\item{samples_in_rows}{Logical indicating whether samples are in rows (default) or columns.}
+
+\item{reassign_cluster_zero}{Logical indicating whether to reassign data points in cluster 0.}
 }
 \value{
-A \code{UBMIObject} containing the results of the integration, including factors, clusters, silhouette scores, and metagenes.
+An object of class \code{UBMIObject} containing the results of the multi-omics integration and analysis.
+This includes factors, clusters, silhouette scores, individual factors, metagenes, and the \code{ubmi} package version.
 }
 \description{
 \code{ubmi} performs unsupervised integration of multi-omics data.
 It utilizes Uniform Manifold Approximation and Projection (UMAP) for dimensionality reduction and HDBSCAN for clustering.
 The method concatenates individual UMAP embeddings of each omics data type, followed by a second UMAP for integrated analysis.
-Clustering is performed on the integrated data, and optionally, cluster 0 reassignment and feature computation can be done.
+Clustering is performed on the integrated data, and optionally, cluster 0 reassignment and feature computation (metagenes) can be done.
 }
 \examples{
-# Assuming expr, meth, miRNA, and metab are your omics datasets
-omics_data <- list(expr, meth, miRNA, metab)
-ubmi_result <- ubmi(omics = omics_data)
+omics_list <- list(data.frame(matrix(rnorm(200), ncol = 20)),
+                   data.frame(matrix(rnorm(200), ncol = 20)))
+ubmi_result <- ubmi(omics_list, samples_in_rows = FALSE)
 
 }

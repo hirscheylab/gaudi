@@ -1,7 +1,7 @@
 
 # UBMI
 
-The ubmi package provides a streamlined solution for the integration and analysis of complex multi-omics data. Leveraging the power of UMAP (Uniform Manifold Approximation and Projection), this package offers researchers an efficient and intuitive approach to uncover hidden patterns and relationships within diverse biological datasets. Designed for ease of use and compatibility with existing R-based bioinformatics workflows, ubmi is ideal for both novice and experienced users looking to delve deeper into the world of multi-omics research.  
+The `ubmi` package provides a streamlined solution for the integration and analysis of complex multi-omics data. Leveraging the power of UMAP (Uniform Manifold Approximation and Projection), this package offers researchers an efficient and intuitive approach to uncover hidden patterns and relationships within diverse biological datasets. Designed for ease of use and compatibility with existing R-based bioinformatics workflows, `ubmi` is ideal for both novice and experienced users looking to delve deeper into the world of multi-omics research.  
 
 ## Installation
 

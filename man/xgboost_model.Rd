@@ -2,10 +2,23 @@
 % Please edit documentation in R/utils.R
 \name{xgboost_model}
 \alias{xgboost_model}
-\title{XGBOOST}
+\title{XGBoost Model with SHAP Values}
 \usage{
 xgboost_model(x, y, xgboost_params = list())
 }
+\arguments{
+\item{x}{A \code{matrix} or data frame of predictor variables (features).}
+
+\item{y}{A \code{vector} of response variables (target).}
+
+\item{xgboost_params}{A \code{list} of parameters for the XGBoost model.
+Defaults to an empty list, which uses the XGBoost default parameters.}
+}
+\value{
+A matrix of SHAP contribution values for each feature in the dataset.
+This matrix provides insights into how each feature contributes to the model's predictions.
+}
 \description{
-XGBOOST
+This function builds an XGBoost model using the provided training data and parameters and
+calculates SHAP (SHapley Additive exPlanations) values to interpret the model.
 }

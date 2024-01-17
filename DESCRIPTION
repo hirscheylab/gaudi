@@ -1,6 +1,6 @@
 Package: ubmi
 Title: UMAP-based Multi-omics Integration
-Version: 0.1.6
+Version: 0.1.7
 Authors@R: 
     c(person(given = "Pol",
              family = "Castellano-Escuder",
@@ -17,6 +17,7 @@ Description:
     users looking to delve deeper into the world of multi-omics research.
 Imports:
   cluster,
+  dbscan,
   dplyr,
   patchwork,
   SHAPforxgboost,

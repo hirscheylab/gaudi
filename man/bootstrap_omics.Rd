@@ -2,10 +2,24 @@
 % Please edit documentation in R/utils.R
 \name{bootstrap_omics}
 \alias{bootstrap_omics}
-\title{Bootstrap}
+\title{Bootstrap Omics Data}
 \usage{
 bootstrap_omics(data, n, perturbation = 0.1)
 }
+\arguments{
+\item{data}{A data frame.}
+
+\item{n}{The proportion of the original dataset size to generate as synthetic samples.
+For example, n = 1 will create an equal number of synthetic samples as in the original dataset.}
+
+\item{perturbation}{A numeric value specifying the magnitude of random perturbation to apply to each feature of the synthetic samples.
+Default is set to 0.1. The perturbation is uniformly applied within the range \link{-perturbation, +perturbation}.}
+}
+\value{
+A data frame or matrix combining the original and synthetic samples.
+The number of rows will be the sum of the original dataset and the number of synthetic samples created.
+}
 \description{
-Bootstrap
+This function generates synthetic omics data samples by applying random perturbations to existing data.
+It aims to augment the dataset by creating additional, slightly varied samples, which can be useful in various analyses like machine learning.
 }

@@ -2,10 +2,19 @@
 % Please edit documentation in R/utils.R
 \name{umap_factorization}
 \alias{umap_factorization}
-\title{UMAP factors}
+\title{UMAP Factorization}
 \usage{
 umap_factorization(umap_params = list())
 }
+\arguments{
+\item{umap_params}{A list of parameters to pass to the UMAP function from the \code{uwot} package.
+If not specified, default parameters are used.}
+}
+\value{
+A data frame containing the UMAP factorization results.
+Each row corresponds to a data point, and the columns are the UMAP dimensions.
+}
 \description{
-UMAP factors
+This function performs Uniform Manifold Approximation and Projection (UMAP)
+for dimensionality reduction, using specified parameters.
 }

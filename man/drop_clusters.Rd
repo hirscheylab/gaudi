@@ -2,10 +2,21 @@
 % Please edit documentation in R/utils.R
 \name{drop_clusters}
 \alias{drop_clusters}
-\title{Drop clusts}
+\title{Drop Specified Clusters}
 \usage{
-drop_clusters(object, clusters = 0, ...)
+drop_clusters(object, clusters = 0)
+}
+\arguments{
+\item{object}{An \code{UBMIObject}.}
+
+\item{clusters}{A vector of cluster IDs (numeric or character) that should be removed from the object.
+Default is 0, which means it will remove the cluster(s) labeled as '0'.}
+}
+\value{
+An object similar to the input but with the specified clusters and their corresponding data removed.
+The function performs in-place modification but also returns the modified object for convenience.
+If the object is not valid after modification, the function will not return it.
 }
 \description{
-Drop clusts
+This function removes specified clusters from an \code{UBMIObject}.
 }
