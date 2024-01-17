@@ -71,7 +71,7 @@ ubmi <- function(omics,
   colnames(umap_clusters)[1:(ncol(umap_clusters) - 1)] <- paste0("UMAP", 1:(ncol(umap_clusters) - 1))
   message("Done!")
   
-  if (reassign_cluster_zero) {
+  if (reassign_cluster_zero & length(unique(umap_clusters$clust)) > 1) {
     umap_clusters <- reassign_cluster_zero(umap_clusters, nearest_centroid = FALSE)
   }
   
@@ -80,7 +80,7 @@ ubmi <- function(omics,
     sil_score <- cluster::silhouette(umap_clusters$clust, dist(umap_clusters[, 1:2]))
     mean_sil_score <- mean(sil_score[, 3])
   } else {
-    mean_sil_score <- NULL
+    mean_sil_score <- 0
   }
   
   # Metagenes

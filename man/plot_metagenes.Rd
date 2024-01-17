@@ -2,10 +2,32 @@
 % Please edit documentation in R/plots.R
 \name{plot_metagenes}
 \alias{plot_metagenes}
-\title{Plot Metagenes}
+\title{Plot UBMI Metagenes}
 \usage{
-plot_metagenes(object, component = 1, top = 10, cluster_line = FALSE, ...)
+plot_metagenes(
+  object,
+  on_omics = 1,
+  on_factor = 1,
+  top = 10,
+  palette = "plasma"
+)
+}
+\arguments{
+\item{object}{An \code{UBMIObject}.}
+
+\item{on_omics}{Numeric index indicating which omics dataset in the \code{object} to use for plotting.}
+
+\item{on_factor}{Numeric index indicating which factor from the multi-omics integration to use for plotting.}
+
+\item{top}{Integer specifying the number of top features to display in the plot.}
+
+\item{palette}{Character string specifying the color palette for the plot.
+Supported palettes include 'inferno', 'plasma', and others from the viridis package.}
+}
+\value{
+A ggplot object representing the metagenes plot with SHAP values.
 }
 \description{
-Plot Metagenes
+This function creates a plot of the top metagenes based on SHAP values derived from UBMI's feature importance analysis.
+It provides options to select which omics data and factor to use, the number of top features to display, and the color palette.
 }

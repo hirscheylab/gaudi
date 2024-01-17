@@ -1,112 +1,25 @@
 
-#' Plot Metagenes
+#' Plot UBMI Factors
 #'
-#' @export
-plot_metagenes <- function(object,
-                           component = 1,
-                           top = 10,
-                           cluster_line = FALSE,
-                           ...) {
-  
-  factors <- object@factors
-  
-  if (component == 1) {
-    metagenes <- object@metagenes_factor1
-    ranks <- object@metagenes_factor1_rank[object@metagenes_factor1_rank %in% colnames(metagenes)]
-  } else {
-    metagenes <- object@metagenes_factor2
-    ranks <- object@metagenes_factor2_rank[object@metagenes_factor2_rank %in% colnames(metagenes)]
-  }
-  
-  shap_values_nonzero_long <- metagenes %>% 
-    dplyr::mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
-    tidyr::pivot_longer(cols = -c(id, Cluster)) %>%
-    dplyr::mutate(Feature = dplyr::case_when(name %in% ranks[1:top] ~ name,
-                                             !(name %in% ranks[1:top]) ~ "Other features")) %>% 
-    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
-  
-  if (top > length(ranks)) top <- length(ranks)
-  
-  ggplot2::ggplot(shap_values_nonzero_long) +
-    ggplot2::geom_col(ggplot2::aes(reorder(id, as.numeric(Cluster)), value, fill = Feature)) +
-    ggplot2::geom_hline(yintercept = 0) +
-    ggplot2::labs(x = "Samples (Ranked by Cluster)",
-                  y = "SHAP Value") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
-                   axis.ticks.x = ggplot2::element_blank(),
-                   panel.grid.major = ggplot2::element_blank()) +
-    
-    {if(length(ranks) >= top & top <= 10 & component == 1) 
-      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
-                        values = c(ggsci::pal_npg()(top), "gray90"))} +
-    {if(length(ranks) >= top & top <= 10 & component == 2) 
-      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
-                        values = c(ggsci::pal_simpsons()(top), "gray90"))} +
-    
-    {if(length(ranks) >= top & top > 10 & component == 1) 
-      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
-                        values = c(viridis::viridis(top), "gray90"))} +
-    {if(length(ranks) >= top & top > 10 & component == 2) 
-      scale_fill_manual(breaks = c(ranks[1:top], "Other features"),
-                        values = c(viridis::viridis(top, option = "plasma"), "gray90"))} +
-    
-    {if(length(ranks) < top & top > 10 & component == 1) 
-      scale_fill_manual(breaks = c(ranks[1:top]),
-                        values = c(viridis::viridis(length(unique(shap_values_nonzero_long$Feature)))))} +
-    {if(length(ranks) < top & top > 10 & component == 2) 
-      scale_fill_manual(breaks = c(ranks[1:top]),
-                        values = c(viridis::viridis(length(unique(shap_values_nonzero_long$Feature)), option = "plasma")))} +
-    
-    {if(cluster_line) ggplot2::geom_vline(xintercept = cumsum(as.numeric(table(factors$clust)))[-length(table(factors$clust))],
-                                          linetype = "dashed", color = "gray50", linewidth = 0.5)}
-}
-
-#' Plot Metagenes Clusters
+#' This function creates a plot of factors derived from UBMI.
+#' It provides options to adjust label sizes, draw lines, and use ad-hoc labels for clustering.
 #'
-#' @export
-plot_metagenes_clusters <- function(object,
-                                    component = 1,
-                                    ...) {
-  
-  factors <- object@factors
-  clust_num <- length(table(factors$clust))
-  
-  if (component == 1) {
-    metagenes <- object@metagenes_factor1
-  } else {
-    metagenes <- object@metagenes_factor2
-  }
-  
-  shap_values_nonzero_long <- metagenes %>% 
-    dplyr::mutate(id = rownames(factors), Cluster = as.factor(paste0("Cluster ", factors$clust))) %>% 
-    tidyr::pivot_longer(cols = -c(id, Cluster)) %>% 
-    dplyr::group_by(Cluster) %>% 
-    dplyr::summarise(median_shap = median(value)) %>% 
-    dplyr::ungroup() %>% 
-    dplyr::mutate(Cluster = factor(Cluster, levels = c(paste0("Cluster ", min(factors$clust):max(factors$clust)))))
-
-  ggplot2::ggplot(shap_values_nonzero_long, ggplot2::aes(as.factor(as.numeric(gsub("Cluster ", "", Cluster))),
-                                                         median_shap, fill = Cluster)) +
-    ggplot2::geom_col(alpha = 0.8) +
-    ggplot2::geom_hline(yintercept = 0) +
-    ggplot2::labs(x = NULL,
-                  y = "Median SHAP Value") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(panel.grid.major = ggplot2::element_blank()) +
-    {if(clust_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(clust_num))} +
-    {if(clust_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
-    NULL
-}
-         
-#' Plot Factors
+#' @param object An `UBMIObject`.
+#' @param label_size Numeric value specifying the size of labels on the plot. 
+#'                   A value of 0 means labels are not drawn.
+#' @param draw_lines Logical value indicating whether to draw dashed lines at the median of UMAP coordinates.
+#' @param ad_hoc_label Optional vector of labels to be used instead of the default cluster labels.
+#' @param palette Character string specifying the color palette for the plot.
+#'                Supported palettes include 'inferno', 'plasma', and others from the viridis package.
+#'                
+#' @return A ggplot object representing the factor plot.
 #'
 #' @export
 plot_factors <- function(object,
                          label_size = 0,
                          draw_lines = FALSE,
                          ad_hoc_label = NULL,
-                         ...) {
+                         palette = "mako") {
   
   factors <- object@factors
   clust_num <- length(table(factors$clust))
@@ -129,71 +42,119 @@ plot_factors <- function(object,
   }
   
   plot_complete <- ggplot2::ggplot(plot_data, ggplot2::aes(UMAP1, UMAP2)) +
-    {if(draw_lines) geom_vline(xintercept = median(plot_data$UMAP1), linetype = "dashed", color = "black")} +
-    {if(draw_lines) geom_hline(yintercept = median(plot_data$UMAP2), linetype = "dashed", color = "black")} +
+    {if(draw_lines) ggplot2::geom_vline(xintercept = median(plot_data$UMAP1), linetype = "dashed", color = "black")} +
+    {if(draw_lines) ggplot2::geom_hline(yintercept = median(plot_data$UMAP2), linetype = "dashed", color = "black")} +
     ggplot2::geom_point(ggplot2::aes(fill = Label), pch = 21, size = 3, alpha = 0.8, color = "black") +
     ggplot2::theme_bw() +
     {if(label_size != 0) ggplot2::geom_label(data = plot_data[!duplicated(plot_data$Label),], 
                                              ggplot2::aes(cord1, cord2, fill = Label, label = Label),
-                                             color = "white", show.legend = FALSE, size = label_size)}
+                                             color = "white", show.legend = FALSE, size = label_size)} +
+    ggplot2::scale_fill_viridis_d(option = palette, begin = 0.2, end = 0.9) +
+    NULL
   
-  if (is.null(ad_hoc_label)) {
-    plot_complete +
-      {if(clust_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(clust_num))} +
-      {if(clust_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
-      NULL
-  } else {
-    plot_complete +
-      {if(ad_hoc_label_num <= 10) ggplot2::scale_fill_manual(values = ggsci::pal_jco()(ad_hoc_label_num))} +
-      {if(ad_hoc_label_num > 10) ggplot2::scale_fill_viridis_d(option = "inferno")} +
-      NULL
-  }
-  
+  return(plot_complete)
 }
 
-#' Plot grid
+#' Plot UBMI Metagenes
+#'
+#' This function creates a plot of the top metagenes based on SHAP values derived from UBMI's feature importance analysis.
+#' It provides options to select which omics data and factor to use, the number of top features to display, and the color palette.
+#'
+#' @param object An `UBMIObject`.
+#' @param on_omics Numeric index indicating which omics dataset in the `object` to use for plotting.
+#' @param on_factor Numeric index indicating which factor from the multi-omics integration to use for plotting.
+#' @param top Integer specifying the number of top features to display in the plot.
+#' @param palette Character string specifying the color palette for the plot.
+#'                Supported palettes include 'inferno', 'plasma', and others from the viridis package.
+#'
+#' @return A ggplot object representing the metagenes plot with SHAP values.
+#'
+#' @export
+plot_metagenes <- function(object,
+                           on_omics = 1,
+                           on_factor = 1,
+                           top = 10,
+                           palette = "plasma") {
+  
+  factors <- object@factors
+  metagenes <- data.frame(shap = object@metagenes[[on_omics]][, on_factor])
+  
+  shap_values_nonzero_long <- metagenes %>% 
+    dplyr::mutate(Feature = rownames(object@metagenes[[on_omics]])) %>% 
+    dplyr::arrange(dplyr::desc(abs(shap)))
+  
+  if (top > length(shap_values_nonzero_long$shap[shap_values_nonzero_long$shap > 0])) {
+    top <- length(shap_values_nonzero_long$shap[shap_values_nonzero_long$shap > 0])
+  }
+  
+  shap_values_nonzero_long <- shap_values_nonzero_long %>% 
+    dplyr::mutate(Feature = c(Feature[1:top], rep("Other features", dplyr::n() - top)),
+                  Feature = factor(Feature, levels = Feature[1:top])) %>% 
+    dplyr::slice(1:top)
+  
+  plot_complete <- ggplot2::ggplot(shap_values_nonzero_long) +
+    ggplot2::geom_col(ggplot2::aes(reorder(Feature, -abs(as.numeric(shap))), shap, fill = Feature)) +
+    ggplot2::geom_hline(yintercept = 0) +
+    ggplot2::labs(x = "Features (Ranked by SHAP)",
+                  y = "SHAP Value") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.x = ggplot2::element_blank(),
+                   panel.grid.major = ggplot2::element_blank()) +
+    ggplot2::scale_fill_viridis_d(option = palette, begin = 0.2, end = 0.9) +
+    NULL
+  
+  return(plot_complete)
+}
+
+#' Plot UBMI Grid with Factors and Metagenes
+#'
+#' This function creates a comprehensive grid plot for the UBMI results. 
+#' It combines plots of factors and top metagenes associated with different dimensions of the manifold.
+#'
+#' @param object An `UBMIObject`.
+#' @param top_features Integer specifying the number of top features to display in the metagenes plots.
+#' @param on_omics Numeric index indicating which omics dataset in the `object` to use for plotting.
+#' @param label_size Numeric value specifying the size of labels on the factors plot.
+#' @param draw_lines Logical value indicating whether to draw dashed lines at the median of UMAP coordinates.
+#' @param ad_hoc_label Optional vector of labels to be used instead of the default cluster labels.
+#' @param annotations Logical indicating whether to add annotations to the plot.
+#'
+#' @return A patchwork grid plot combining the factors plot and two metagenes plots.
 #'
 #' @export
 plot_ubmi_grid <- function(object,
-                           # top_features = 10,
-                           cluster_label_size = 4,
-                           ad_hoc_label = NULL,
+                           top_features = 10,
+                           on_omics = 1,
+                           label_size = 4,
                            draw_lines = TRUE,
-                           ...) {
+                           ad_hoc_label = NULL,
+                           annotations = TRUE) {
   
-  top_features <- 10
+  factors_plot <- plot_factors(object, label_size = max(1, label_size), draw_lines = draw_lines, 
+                               ad_hoc_label = ad_hoc_label, palette = "mako") +
+    ggplot2::theme(legend.position = "none",
+                   legend.title = ggplot2::element_blank()) + 
+    ggplot2::labs(subtitle = paste0("2-dimensional manifold (", nrow(object@factors), " samples and " ,
+                                    sum(unlist(lapply(object@metagenes, nrow))), " features)"))
   
-  # ranks1 <- object@metagenes_factor1_rank[object@metagenes_factor1_rank %in% colnames(object@metagenes_factor1)]
-  # ranks2 <- object@metagenes_factor2_rank[object@metagenes_factor2_rank %in% colnames(object@metagenes_factor2)]
-  # 
-  # ranks_max <- max(length(ranks1), length(ranks2))
-  # 
-  # if (top_features > ranks_max) top_features <- ranks_max
+  metagenes_plot1 <- plot_metagenes(object, top = top_features, on_omics = on_omics, 
+                                    on_factor = 1, palette = "plasma") + 
+    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, 
+                                    " features associated with the 1st dimension of the manifold"))
   
-  subtitle_factors <- paste0("2-dimensional manifold (", nrow(object@factors), " samples and " , length(object@metagenes_factor1_rank), " features)")
+  metagenes_plot2 <- plot_metagenes(object, top = top_features, on_omics = on_omics, 
+                                    on_factor = 2, palette = "magma") + 
+    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, 
+                                    " features associated with the 2nd dimension of the manifold"))
   
-  factors <- plot_factors(object, label_size = cluster_label_size, ad_hoc_label = ad_hoc_label, draw_lines = draw_lines) +
-    ggplot2::theme(legend.position = "bottom") + 
-    ggplot2::labs(subtitle = subtitle_factors)
+  plot_complete <- factors_plot | (metagenes_plot1 / metagenes_plot2)
   
-  metaclusters1 <- plot_metagenes_clusters(object) + 
-    ggplot2::theme(legend.position = "none") + 
-    ggplot2::labs(subtitle = "SHAP values by cluster (1st dimension)",
-                  x = "Cluster") 
+  if (annotations) {
+    plot_complete <- plot_complete +
+      patchwork::plot_annotation(tag_levels = "A") 
+  }
   
-  metaclusters2 <- plot_metagenes_clusters(object, component = 2) + 
-    ggplot2::theme(legend.position = "none") + 
-    ggplot2::labs(subtitle = "SHAP values by cluster (2nd dimension)",
-                  x = "Cluster") 
-  
-  metagenes1 <- plot_metagenes(object, component = 1, top = top_features, cluster_line = TRUE) + 
-    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 1st dimension of the manifold")) 
-  
-  metagenes2 <- plot_metagenes(object, component = 2, top = top_features, cluster_line = TRUE) + 
-    ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, " features associated with the 2nd dimension of the manifold")) 
-  
-  (factors / (metaclusters1 | metaclusters2)) | 
-    (metagenes1 / metagenes2)
-  
+  return(plot_complete)
 }
 

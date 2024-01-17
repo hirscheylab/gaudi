@@ -2,16 +2,37 @@
 % Please edit documentation in R/plots.R
 \name{plot_ubmi_grid}
 \alias{plot_ubmi_grid}
-\title{Plot grid}
+\title{Plot UBMI Grid with Factors and Metagenes}
 \usage{
 plot_ubmi_grid(
   object,
-  cluster_label_size = 4,
-  ad_hoc_label = NULL,
+  top_features = 10,
+  on_omics = 1,
+  label_size = 4,
   draw_lines = TRUE,
-  ...
+  ad_hoc_label = NULL,
+  annotations = TRUE
 )
 }
+\arguments{
+\item{object}{An \code{UBMIObject}.}
+
+\item{top_features}{Integer specifying the number of top features to display in the metagenes plots.}
+
+\item{on_omics}{Numeric index indicating which omics dataset in the \code{object} to use for plotting.}
+
+\item{label_size}{Numeric value specifying the size of labels on the factors plot.}
+
+\item{draw_lines}{Logical value indicating whether to draw dashed lines at the median of UMAP coordinates.}
+
+\item{ad_hoc_label}{Optional vector of labels to be used instead of the default cluster labels.}
+
+\item{annotations}{Logical indicating whether to add annotations to the plot.}
+}
+\value{
+A patchwork grid plot combining the factors plot and two metagenes plots.
+}
 \description{
-Plot grid
+This function creates a comprehensive grid plot for the UBMI results.
+It combines plots of factors and top metagenes associated with different dimensions of the manifold.
 }

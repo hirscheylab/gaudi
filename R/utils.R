@@ -89,6 +89,10 @@ xgboost_model <- function(x, y, xgboost_params = list()) {
                           nthread = parallel::detectCores() - 2,
                           early_stopping_rounds = 8)
   
+  if (is.null(colnames(x))) {
+    colnames(x) <- paste0("feature", 1:ncol(x))
+  }
+  
   shap_values <- SHAPforxgboost::shap.values(xgb_model = mod, X_train = x)
   shap_contrib <- as.matrix(shap_values$mean_shap_score)
 
@@ -111,12 +115,11 @@ xgboost_model <- function(x, y, xgboost_params = list()) {
 drop_clusters <- function(object,
                           clusters = 0) {
   
-  nonzero <- which(!(object@factors$clust %in% clusters))
+  non_zero_clusters <- which(!(object@factors$clust %in% clusters))
   
-  object@factors <- object@factors[nonzero ,]
-  object@clusters <- object@clusters[nonzero]
-  object@metagenes_factor1 <- object@metagenes_factor1[nonzero ,]
-  object@metagenes_factor2 <- object@metagenes_factor2[nonzero ,] 
+  object@factors <- object@factors[non_zero_clusters ,]
+  object@clusters <- object@clusters[non_zero_clusters]
+  object@individual_factors <- lapply(object@individual_factors, function(x) {x[non_zero_clusters ,]})
   
   if(validObject(object))
     return(object)
@@ -204,7 +207,7 @@ reassign_cluster_zero <- function(data, nearest_centroid = FALSE) {
       }
     }
     
-    # Step 4: Combine the data with re-assigned clusters and non-zero clusters
+    # Combine the data with re-assigned clusters and non-zero clusters
     data <- dplyr::bind_rows(non_zero_clusters, cluster_zero_points)
   }
   
