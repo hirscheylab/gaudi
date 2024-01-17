@@ -19,7 +19,7 @@ plot_factors <- function(object,
                          label_size = 0,
                          draw_lines = FALSE,
                          ad_hoc_label = NULL,
-                         palette = "mako") {
+                         palette = "magma") {
   
   factors <- object@factors
   clust_num <- length(table(factors$clust))
@@ -132,7 +132,7 @@ plot_ubmi_grid <- function(object,
                            annotations = TRUE) {
   
   factors_plot <- plot_factors(object, label_size = max(1, label_size), draw_lines = draw_lines, 
-                               ad_hoc_label = ad_hoc_label, palette = "mako") +
+                               ad_hoc_label = ad_hoc_label, palette = "magma") +
     ggplot2::theme(legend.position = "none",
                    legend.title = ggplot2::element_blank()) + 
     ggplot2::labs(subtitle = paste0("2-dimensional manifold (", nrow(object@factors), " samples and " ,
@@ -144,7 +144,7 @@ plot_ubmi_grid <- function(object,
                                     " features associated with the 1st dimension of the manifold"))
   
   metagenes_plot2 <- plot_metagenes(object, top = top_features, on_omics = on_omics, 
-                                    on_factor = 2, palette = "magma") + 
+                                    on_factor = 2, palette = "mako") + 
     ggplot2::labs(subtitle = paste0("SHAP values of the top ", top_features, 
                                     " features associated with the 2nd dimension of the manifold"))
   

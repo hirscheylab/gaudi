@@ -9,7 +9,7 @@ plot_factors(
   label_size = 0,
   draw_lines = FALSE,
   ad_hoc_label = NULL,
-  palette = "mako"
+  palette = "magma"
 )
 }
 \arguments{
