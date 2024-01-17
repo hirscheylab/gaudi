@@ -1,6 +1,6 @@
 Package: ubmi
 Title: UMAP-based Multi-omics Integration
-Version: 0.1.5
+Version: 0.1.6
 Authors@R: 
     c(person(given = "Pol",
              family = "Castellano-Escuder",
@@ -9,21 +9,24 @@ Authors@R:
              comment = c(ORCID = "0000-0001-6466-877X"))
              )
 Description: 
-    The complex relationships between omics datasets are a major obstacle for linear integration methods. 
-    UBMI (UMAP-based Multi-omics Integration) is a novel non-linear, unsupervised, and interpretable method 
-    for integrating multi-omics data.
+    The ubmi package provides a streamlined solution for the integration and analysis of complex
+    multi-omics data. Leveraging the power of UMAP (Uniform Manifold Approximation and Projection), 
+    this package offers researchers an efficient and intuitive approach to uncover hidden patterns
+    and relationships within diverse biological datasets. Designed for ease of use and compatibility 
+    with existing R-based bioinformatics workflows, ubmi is ideal for both novice and experienced 
+    users looking to delve deeper into the world of multi-omics research.
 Imports:
   cluster,
   dplyr,
   patchwork,
-  uwot,
-  xgboost,
   SHAPforxgboost,
   tibble,
-  tidyr
+  tidyr,
+  uwot,
+  xgboost
 Suggests:
   tidyverse
-License: MIT + file LICENSE
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

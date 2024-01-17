@@ -5,7 +5,7 @@
 \alias{UBMIObject-class}
 \title{UBMIObject Class}
 \description{
-A class representing the output of the UMAP-based Multi-omics Integration (UBMI) process.
+A class representing the output of the UMAP-based Multi-omics Integration (UBMI) method.
 The \code{UBMIObject} class encapsulates various results and metadata from the UBMI analysis,
 including integrated factors, clustering results, silhouette scores, and metagene associations.
 }
