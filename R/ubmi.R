@@ -87,7 +87,10 @@ ubmi <- function(omics,
   if (compute_features) {
     message("Computing metagenes...")
     if (combine_omics) {
+      # Omic type effect correction (batch)
+      batch <- generate_batch(unlist(lapply(omics, ncol)))
       features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
+      features <- sva::ComBat(dat = features, batch = batch, mod = NULL)
       omics <- c(list(features), omics) 
     }
     

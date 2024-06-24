@@ -214,3 +214,34 @@ reassign_cluster_zero <- function(data, nearest_centroid = FALSE) {
   return(data)
 }
 
+#' Generate and Execute Repeated Elements Vector
+#'
+#' This function takes a numeric vector and generates a new vector 
+#' where each element is repeated according to the corresponding value in the input vector.
+#'
+#' @param vec A numeric vector where each element indicates the number of times 
+#' the corresponding index should be repeated in the output vector.
+#' 
+#' @return A vector where each integer from 1 to the length of the input vector 
+#' is repeated according to the values in the input vector.
+#' 
+#' @examples
+#' # Example usage
+#' vec <- c(3, 2, 5)
+#' generate_batch(vec)
+#' 
+#' @export
+generate_batch <- function(vec) {
+  result <- "c("
+  
+  for (i in seq_along(vec)) {
+    if (i > 1) {
+      result <- paste(result, ", ", sep = "")
+    }
+    result <- paste(result, "rep(", i, ", ", vec[i], ")", sep = "")
+  }
+  
+  result <- paste(result, ")", sep = "")
+  as.factor(eval(parse(text = result)))
+}
+

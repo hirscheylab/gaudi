@@ -1,6 +1,6 @@
 Package: ubmi
 Title: UMAP-based Multi-omics Integration
-Version: 0.1.10
+Version: 0.1.11
 Authors@R: 
     c(person(given = "Pol",
              family = "Castellano-Escuder",
@@ -22,9 +22,11 @@ Imports:
   ggplot2,
   patchwork,
   SHAPforxgboost,
+  sva,
   tibble,
   tidyr,
   uwot,
+  vegan,
   xgboost
 Suggests:
   tidyverse
