@@ -1,6 +1,6 @@
 Package: ubmi
 Title: UMAP-based Multi-omics Integration
-Version: 0.1.11
+Version: 0.1.12
 Authors@R: 
     c(person(given = "Pol",
              family = "Castellano-Escuder",
@@ -14,13 +14,14 @@ Description:
     this package offers researchers an efficient and intuitive approach to uncover hidden patterns
     and relationships within diverse biological datasets. Designed for ease of use and compatibility 
     with existing R-based bioinformatics workflows, ubmi is ideal for both novice and experienced 
-    users looking to delve deeper into the world of multi-omics research.
+    users looking to dive deeper into the world of multi-omics research.
 Imports:
   cluster,
   dbscan,
   dplyr,
   ggplot2,
   patchwork,
+  randomForest,
   SHAPforxgboost,
   sva,
   tibble,
