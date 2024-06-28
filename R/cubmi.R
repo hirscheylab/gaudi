@@ -1,3 +1,34 @@
+
+#' Consensus UMAP-based Multi-omics Integration
+#'
+#' @description
+#' \code{cubmi} performs unsupervised integration of multi-omics data. 
+#' It utilizes Uniform Manifold Approximation and Projection (UMAP) for dimensionality reduction and HDBSCAN for clustering.
+#' The method concatenates individual UMAP embeddings of each omics data type, followed by a second UMAP for integrated analysis.
+#' Clustering is performed on the integrated data, and optionally, cluster 0 reassignment and feature computation (metagenes) can be done.
+#'
+#' @param omics A `list` of omics data frames or matrices.
+#' @param n_max Numeric value indicating the total number of latent spaces to be computed (the final latent space will be based on all these spaces).
+#' @param umap_params Parameters for UMAP factorization of individual omics datasets.
+#' @param umap_params_conc Parameters for UMAP factorization of concatenated omics data.
+#' @param min_pts Minimum number of points per cluster in HDBSCAN clustering.
+#' @param xgboost_params Parameters for XGBoost model used in metagenes computation.
+#' @param compute_features Logical indicating whether to compute metagenes.
+#' @param combine_omics Logical indicating whether to combine combined omics metagenes.
+#' @param clean_feature_names Logical indicating whether to clean feature names in omics datasets.
+#' @param samples_in_rows Logical indicating whether samples are in rows (default) or columns.
+#' @param reassign_cluster_zero Logical indicating whether to reassign data points in cluster 0.
+#' @param method Character indicating the regression model used to extract features. Options are "xgboost" and "rf".
+#' 
+#' @return An object of class `UBMIObject` containing the results of the multi-omics integration and analysis.
+#'         This includes factors, clusters, silhouette scores, individual factors, metagenes, and the \code{ubmi} package version.
+#'
+#' @examples
+#' omics_list <- list(data.frame(matrix(rnorm(200), ncol = 20)),
+#'                    data.frame(matrix(rnorm(200), ncol = 20)))
+#' cubmi_result <- cubmi(omics_list, n_max = 3)
+#'
+#' @export
 cubmi <- function(omics,
                   n_max = 10,
                   umap_params = list(n_neighbors = 15, n_components = 4),
@@ -102,11 +133,13 @@ cubmi <- function(omics,
   if (compute_features) {
     message("Computing metagenes...")
     if (combine_omics) {
-      # Omic type effect correction (batch)
-      batch <- generate_batch(unlist(lapply(omics, ncol)))
-      features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
-      features <- sva::ComBat(dat = features, batch = batch, mod = NULL)
-      omics <- c(list(features), omics) 
+      suppressMessages({
+        # Omic type effect correction (batch)
+        batch <- generate_batch(unlist(lapply(omics, ncol)))
+        features <- as.matrix(dplyr::bind_cols(omics, .name_repair = "unique_quiet"))
+        features <- sva::ComBat(dat = features, batch = batch, mod = NULL)
+        omics <- c(list(features), omics)
+      })
     }
     
     xgboost_fixed_params <- list(objective = "reg:squarederror")
@@ -123,7 +156,6 @@ cubmi <- function(omics,
                                        y = umap_clusters[,j])
           )
         }
-        
         metagenes_tmp <- metagenes_tmp %>% 
           as.data.frame() %>% 
           tibble::rownames_to_column("feature")

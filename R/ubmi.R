@@ -17,6 +17,7 @@
 #' @param clean_feature_names Logical indicating whether to clean feature names in omics datasets.
 #' @param samples_in_rows Logical indicating whether samples are in rows (default) or columns.
 #' @param reassign_cluster_zero Logical indicating whether to reassign data points in cluster 0.
+#' @param method Character indicating the regression model used to extract features. Options are "xgboost" and "rf".
 #'
 #' @return An object of class `UBMIObject` containing the results of the multi-omics integration and analysis.
 #'         This includes factors, clusters, silhouette scores, individual factors, metagenes, and the \code{ubmi} package version.
@@ -36,7 +37,8 @@ ubmi <- function(omics,
                  combine_omics = FALSE,
                  clean_feature_names = FALSE,
                  samples_in_rows = TRUE,
-                 reassign_cluster_zero = FALSE) {
+                 reassign_cluster_zero = FALSE,
+                 method = "xgboost") {
   
   if (samples_in_rows) {
     omics <- lapply(omics, t)
@@ -98,9 +100,17 @@ ubmi <- function(omics,
     metagenes <- list()
     for (i in 1:length(omics)) {
       for (j in 1:(ncol(umap_clusters) - 1)) {
-        metagenes_tmp <- xgboost_model(x = omics[[i]], 
-                                       y = umap_clusters[,j], 
-                                       xgboost_params = c(xgboost_fixed_params, xgboost_params)) %>% 
+        if (method == "xgboost") {
+          metagenes_tmp <- xgboost_model(x = omics[[i]], 
+                                         y = umap_clusters[,j], 
+                                         xgboost_params = c(xgboost_fixed_params, xgboost_params))
+        }  else if (method == "rf") {
+          metagenes_tmp <- randomForest::importance(
+            randomForest::randomForest(x = omics[[i]],
+                                       y = umap_clusters[,j])
+          )
+        }
+        metagenes_tmp <- metagenes_tmp %>% 
           as.data.frame() %>% 
           tibble::rownames_to_column("feature")
         if (j > 1) {
