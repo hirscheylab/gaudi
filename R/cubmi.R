@@ -109,7 +109,8 @@ cubmi <- function(omics,
   }
   min_pts <- max(min_pts, 2)
   
-  consensus_umap <- data.frame(id = rownames(reference), UMAP1 = comp1, UMAP2 = comp2) %>% 
+  consensus_umap <- data.frame(id = rownames(reference), UMAP1 = comp1, UMAP2 = comp2) %>%
+    tibble::remove_rownames() %>% 
     tibble::column_to_rownames("id")
   
   hdbscan_labels <- dbscan::hdbscan(consensus_umap, minPts = min_pts)$cluster
