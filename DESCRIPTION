@@ -1,6 +1,6 @@
 Package: ubmi
 Title: UMAP-based Multi-omics Integration
-Version: 0.1.14
+Version: 0.1.15
 Authors@R: 
     c(person(given = "Pol",
              family = "Castellano-Escuder",
