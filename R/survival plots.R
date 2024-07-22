@@ -1,104 +1,29 @@
-#' Plot Kaplan-Meier Survival Plots
-#'
-#' @param object A UBMIObject
-#' @param Survival Either a named vector or a data frame with a column named 
-#' "Survival", names/rownames should match the id names of the UBMI Object
-#' @param Death Either a named vector or a data frame with a column named 
-#' "Death", names/rownames should match the id names of the UBMI Object
-#'
-#' @return A Kaplan-Meier plot, of ggplot2 type
-#' @export
-#'
-#' @examples
-plot_survival <- function(object, Survival, Death) {
-  
-  # UBMI Object validation
-  if (!inherits(object, "UBMIObject")) {
-    stop("The 'object' parameter must be of class 'UBMIObject'.")
-  }
-  
-  # Extract clusters from the object
-  clusters <- object@factors[, "clust", drop = FALSE]
-  
-  # Helper function to validate and convert vectors to data frames
-  convert_to_df <- function(vec, name) {
-    if (!is.null(names(vec))) {
-      return(data.frame(
-        names = names(vec),
-        !!name := as.numeric(vec),
-        stringsAsFactors = FALSE
-      ))
-    }
-    stop(paste(name, "must be a named vector or data frame with a column named", name))
-  }
-  
-  # Input type validation and conversion
-  Survival <- if (is.vector(Survival)) convert_to_df(Survival, "Survival") else {
-    if ("Survival" %in% colnames(Survival)) Survival else stop("Survival data frame should have a column named \"Survival\"")
-  }
-  
-  Death <- if (is.vector(Death)) convert_to_df(Death, "Death") else {
-    if ("Death" %in% colnames(Death)) Death else stop("Death data frame should have a column named \"Death\"")
-  }
-  
-  # Convert row names to columns
-  clusters <- clusters %>% rownames_to_column(var = "names")
-  Survival <- Survival %>% rownames_to_column(var = "names")
-  Survival$Survival <- as.numeric(Survival$Survival)
-  Death <- Death %>% rownames_to_column(var = "names")
-  Death$Death <- as.numeric(Death$Death)
-  
-  # Merge data frames
-  merged_df <- clusters %>%
-    left_join(Survival %>% select(names, Survival), by = "names") %>%
-    left_join(Death %>% select(names, Death), by = "names") %>% 
-    column_to_rownames(var = "names")
-  
-  # Filter out clusters with noise and remove NA values
-  cleaned_df <- merged_df %>%
-    dplyr::filter(clust != 0) %>%
-    tidyr::drop_na()
-  
-  # Convert cluster to factor and sort levels
-  cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
-  
-  # Perform survival analysis
-  model_event <- survfit(Surv(Survival, Death) ~ clust, data = cleaned_df)
-  pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
-  
-  # Generate Kaplan-Meier plot
-  kaplan_meier_plot <- ggsurvplot(
-    model_event,
-    palette = viridis::viridis(length(levels(cleaned_df$clust)), end = 0.8),
-    surv.median.line = "hv",
-    data = cleaned_df,
-    legend.title = "Cluster",
-    legend.labs = levels(cleaned_df$clust)
-  )
-  
-  # Add title and subtitle to the plot
-  kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
-    labs(
-      title = paste("Cluster Distribution (", length(levels(cleaned_df$clust)), " clusters)"),
-      subtitle = paste("p-value =", pval)
-    )
-  
-  return(kaplan_meier_plot)
-}
+library(shiny)
+library(survival)
+library(survminer)
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(tibble)
 
-#' Interactive Kaplan-Meier Survival Plots
+#' Kaplan-Meier Survival Plots (Interactive)
 #'
-#' This function creates an interactive Kaplan-Meier survival plot using Shiny.
+#' This function creates a Kaplan-Meier survival plot and allows the user to
+#' select which clusters to plot. 
 #'
 #' @param object A UBMIObject containing cluster data.
 #' @param Survival A named vector or data frame with a column named "Survival". 
 #' @param Death A named vector or data frame with a column named "Death". 
+#' @param select_clusters if TRUE, will open a Shiny window to allow the user to
+#' select which clusters they would like to plot
 #'
-#' @return A Shiny application that displays an interactive Kaplan-Meier plot. 
+#' @return A Kaplan-Meier plot, of ggplot2 type. 
 #' @export
 #'
 #' @examples
-interactive_survival_plot <- function(object, Survival, Death) {
+#' analyze_survival(UBMI_object, survival_vector, death_vector)
+#' analyze_survival(UBMI_object, survival_data_frame, death_data_frame, select_clusters = TRUE)
+plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
   
   # UBMI Object validation
   if (!inherits(object, "UBMIObject")) {
@@ -133,6 +58,7 @@ interactive_survival_plot <- function(object, Survival, Death) {
   clusters <- clusters %>% rownames_to_column(var = "names")
   Survival <- Survival %>% rownames_to_column(var = "names")
   Death <- Death %>% rownames_to_column(var = "names")
+  
   Survival$Survival <- as.numeric(Survival$Survival)
   Death$Death <- as.numeric(Death$Death)
   
@@ -141,6 +67,39 @@ interactive_survival_plot <- function(object, Survival, Death) {
     left_join(Survival %>% select(names, Survival), by = "names") %>%
     left_join(Death %>% select(names, Death), by = "names") %>% 
     column_to_rownames(var = "names")
+  
+  if (!select_clusters) {
+    # Filter out clusters with noise and remove NA values
+    cleaned_df <- merged_df %>%
+      dplyr::filter(clust != 0) %>%
+      tidyr::drop_na()
+    
+    # Convert cluster to factor and sort levels
+    cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
+    
+    # Perform survival analysis
+    model_event <- survfit(Surv(Survival, Death) ~ clust, data = cleaned_df)
+    pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
+    
+    # Generate Kaplan-Meier plot
+    kaplan_meier_plot <- ggsurvplot(
+      model_event,
+      palette = viridis::viridis(length(levels(cleaned_df$clust)), end = 0.8),
+      surv.median.line = "hv",
+      data = cleaned_df,
+      legend.title = "Cluster",
+      legend.labs = levels(cleaned_df$clust)
+    )
+    
+    # Add title and subtitle to the plot
+    kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
+      labs(
+        title = paste("Cluster Distribution (", length(levels(cleaned_df$clust)), " clusters)"),
+        subtitle = paste("p-value =", pval)
+      )
+    
+    return(kaplan_meier_plot)
+  }
   
   # Determine the range of y-axis based on all clusters
   full_data <- merged_df %>% dplyr::filter(clust %in% unique(clusters$clust))
@@ -201,6 +160,7 @@ interactive_survival_plot <- function(object, Survival, Death) {
         checkboxGroupInput("clusters", "Select Clusters:",
                            choices = NULL, # Choices will be updated in server
                            selected = NULL), 
+        actionButton(inputId = "close", label = "Close App")
       ),
       
       mainPanel(
@@ -227,8 +187,17 @@ interactive_survival_plot <- function(object, Survival, Death) {
       plot <- interactive_survival(merged_df, input$clusters, xlim)
       print(plot$plot)
     })
+    
+    observeEvent(input$close, {
+      stopApp(input$clusters)
+    })
   }
   
   # Run the application
-  shinyApp(ui = ui, server = server)
+  app <- shinyApp(ui = ui, server = server)
+  result <- runApp(app)
+  
+  plot <- interactive_survival(merged_df, result, xlim)
+  
+  return(plot$plot)
 }
