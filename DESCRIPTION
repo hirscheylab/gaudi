@@ -1,13 +1,17 @@
 Package: ubmi
 Title: UMAP-based Multi-omics Integration
-Version: 0.1.14
-Authors@R: 
-    c(person(given = "Pol",
-             family = "Castellano-Escuder",
-             role = c("aut", "cre"),
-             email = "polcaes@gmail.com",
-             comment = c(ORCID = "0000-0001-6466-877X"))
-             )
+Version: 0.1.15
+Authors@R: c(
+    person(given = "Pol",
+           family = "Castellano-Escuder",
+           role = c("aut", "cre"),
+           email = "polcaes@gmail.com",
+           comment = c(ORCID = "0000-0001-6466-877X")),
+    person(given = "Kevin",
+           family = "Han",
+           role = c("ctb"),
+           email = "kevinhan@seas.upenn.edu")
+           )
 Description: 
     The ubmi package provides a streamlined solution for the integration and analysis of complex
     multi-omics data. Leveraging the power of UMAP (Uniform Manifold Approximation and Projection), 
