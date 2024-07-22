@@ -160,7 +160,7 @@ plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
         checkboxGroupInput("clusters", "Select Clusters:",
                            choices = NULL, # Choices will be updated in server
                            selected = NULL), 
-        actionButton(inputId = "close", label = "Close App")
+        actionButton(inputId = "close", label = "Save and Close")
       ),
       
       mainPanel(
