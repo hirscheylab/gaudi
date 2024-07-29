@@ -1,29 +1,18 @@
-library(shiny)
-library(survival)
-library(survminer)
-library(dplyr)
-library(tidyr)
-library(viridis)
-library(tibble)
-
 #' Kaplan-Meier Survival Plots (Interactive)
 #'
 #' This function creates a Kaplan-Meier survival plot and allows the user to
 #' select which clusters to plot. 
 #'
 #' @param object A UBMIObject containing cluster data.
-#' @param Survival A named vector or data frame with a column named "Survival". 
-#' @param Death A named vector or data frame with a column named "Death". 
+#' @param time A named vector or data frame with a column named "time". 
+#' @param censored A named vector or data frame with a column named "censored". 
 #' @param select_clusters if TRUE, will open a Shiny window to allow the user to
 #' select which clusters they would like to plot
 #'
 #' @return A Kaplan-Meier plot, of ggplot2 type. 
+#' 
 #' @export
-#'
-#' @examples
-#' analyze_survival(UBMI_object, survival_vector, death_vector)
-#' analyze_survival(UBMI_object, survival_data_frame, death_data_frame, select_clusters = TRUE)
-plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
+plot_survival <- function(object, time, censored, select_clusters = FALSE) {
   
   # UBMI Object validation
   if (!inherits(object, "UBMIObject")) {
@@ -46,26 +35,26 @@ plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
   }
   
   # Input type validation and conversion
-  Survival <- if (is.vector(Survival)) convert_to_df(Survival, "Survival") else {
-    if ("Survival" %in% colnames(Survival)) Survival else stop("Survival data frame should have a column named \"Survival\"")
+  time <- if (is.vector(time)) convert_to_df(time, "time") else {
+    if ("time" %in% colnames(time)) time else stop("time data frame should have a column named \"time\"")
   }
   
-  Death <- if (is.vector(Death)) convert_to_df(Death, "Death") else {
-    if ("Death" %in% colnames(Death)) Death else stop("Death data frame should have a column named \"Death\"")
+  censored <- if (is.vector(censored)) convert_to_df(censored, "censored") else {
+    if ("censored" %in% colnames(censored)) censored else stop("censored data frame should have a column named \"censored\"")
   }
   
   # Convert row names to columns
   clusters <- clusters %>% rownames_to_column(var = "names")
-  Survival <- Survival %>% rownames_to_column(var = "names")
-  Death <- Death %>% rownames_to_column(var = "names")
+  time <- time %>% rownames_to_column(var = "names")
+  censored <- censored %>% rownames_to_column(var = "names")
   
-  Survival$Survival <- as.numeric(Survival$Survival)
-  Death$Death <- as.numeric(Death$Death)
+  time$time <- as.numeric(time$time)
+  censored$censored <- as.numeric(censored$censored)
   
   # Merge data frames
   merged_df <- clusters %>%
-    left_join(Survival %>% select(names, Survival), by = "names") %>%
-    left_join(Death %>% select(names, Death), by = "names") %>% 
+    left_join(time %>% dplyr::select(names, time), by = "names") %>%
+    left_join(censored %>% dplyr::select(names, censored), by = "names") %>% 
     column_to_rownames(var = "names")
   
   if (!select_clusters) {
@@ -78,7 +67,7 @@ plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
     cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
     
     # Perform survival analysis
-    model_event <- survfit(Surv(Survival, Death) ~ clust, data = cleaned_df)
+    model_event <- survfit(Surv(time, censored) ~ clust, data = cleaned_df)
     pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
     
     # Generate Kaplan-Meier plot
@@ -103,7 +92,7 @@ plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
   
   # Determine the range of y-axis based on all clusters
   full_data <- merged_df %>% dplyr::filter(clust %in% unique(clusters$clust))
-  full_model_event <- survfit(Surv(Survival, Death) ~ clust, data = full_data)
+  full_model_event <- survfit(Surv(time, censored) ~ clust, data = full_data)
   
   xlim <- range(full_model_event$time)  # Fix x-axis range
   
@@ -118,7 +107,7 @@ plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
     cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
     
     # Perform survival analysis
-    model_event <- survfit(Surv(Survival, Death) ~ clust, data = cleaned_df)
+    model_event <- survfit(Surv(time, censored) ~ clust, data = cleaned_df)
     pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
     
     # Generate Kaplan-Meier plot with fixed plot size

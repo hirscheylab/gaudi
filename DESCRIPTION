@@ -21,17 +21,23 @@ Description:
     users looking to dive deeper into the world of multi-omics research.
 Imports:
   cluster,
+  clusterProfiler, 
   dbscan,
   dplyr,
+  enrichplot, 
   ggplot2,
   patchwork,
   randomForest,
   SHAPforxgboost,
+  shiny, 
+  survival, 
+  survminer, 
   sva,
   tibble,
   tidyr,
   uwot,
   vegan,
+  viridis, 
   xgboost
 Suggests:
   tidyverse
