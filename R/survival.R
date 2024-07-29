@@ -44,18 +44,18 @@ plot_survival <- function(object, time, censored, select_clusters = FALSE) {
   }
   
   # Convert row names to columns
-  clusters <- clusters %>% rownames_to_column(var = "names")
-  time <- time %>% rownames_to_column(var = "names")
-  censored <- censored %>% rownames_to_column(var = "names")
+  clusters <- clusters %>% tibble::rownames_to_column(var = "names")
+  time <- time %>% tibble::rownames_to_column(var = "names")
+  censored <- censored %>% tibble::rownames_to_column(var = "names")
   
   time$time <- as.numeric(time$time)
   censored$censored <- as.numeric(censored$censored)
   
   # Merge data frames
   merged_df <- clusters %>%
-    left_join(time %>% dplyr::select(names, time), by = "names") %>%
-    left_join(censored %>% dplyr::select(names, censored), by = "names") %>% 
-    column_to_rownames(var = "names")
+    dplyr::left_join(time %>% dplyr::select(names, time), by = "names") %>%
+    dplyr::left_join(censored %>% dplyr::select(names, censored), by = "names") %>% 
+    tibble::column_to_rownames(var = "names")
   
   if (!select_clusters) {
     # Filter out clusters with noise and remove NA values
@@ -67,11 +67,11 @@ plot_survival <- function(object, time, censored, select_clusters = FALSE) {
     cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
     
     # Perform survival analysis
-    model_event <- survfit(Surv(time, censored) ~ clust, data = cleaned_df)
-    pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
+    model_event <- survival::survfit(survival::Surv(time, censored) ~ clust, data = cleaned_df)
+    pval <- signif(survminer::surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
     
     # Generate Kaplan-Meier plot
-    kaplan_meier_plot <- ggsurvplot(
+    kaplan_meier_plot <- survminer::ggsurvplot(
       model_event,
       palette = viridis::viridis(length(levels(cleaned_df$clust)), end = 0.8),
       surv.median.line = "hv",
@@ -82,7 +82,7 @@ plot_survival <- function(object, time, censored, select_clusters = FALSE) {
     
     # Add title and subtitle to the plot
     kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
-      labs(
+      ggplot2::labs(
         title = paste("Cluster Distribution (", length(levels(cleaned_df$clust)), " clusters)"),
         subtitle = paste("p-value =", pval)
       )
@@ -92,7 +92,7 @@ plot_survival <- function(object, time, censored, select_clusters = FALSE) {
   
   # Determine the range of y-axis based on all clusters
   full_data <- merged_df %>% dplyr::filter(clust %in% unique(clusters$clust))
-  full_model_event <- survfit(Surv(time, censored) ~ clust, data = full_data)
+  full_model_event <- survival::survfit(survival::Surv(time, censored) ~ clust, data = full_data)
   
   xlim <- range(full_model_event$time)  # Fix x-axis range
   
@@ -107,11 +107,11 @@ plot_survival <- function(object, time, censored, select_clusters = FALSE) {
     cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
     
     # Perform survival analysis
-    model_event <- survfit(Surv(time, censored) ~ clust, data = cleaned_df)
-    pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
+    model_event <- survival::survfit(survival::Surv(time, censored) ~ clust, data = cleaned_df)
+    pval <- signif(survminer::surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
     
     # Generate Kaplan-Meier plot with fixed plot size
-    kaplan_meier_plot <- ggsurvplot(
+    kaplan_meier_plot <- survminer::ggsurvplot(
       model_event,
       palette = viridis::viridis(length(levels(cleaned_df$clust)), end = 0.8),
       surv.median.line = "hv",
@@ -124,14 +124,14 @@ plot_survival <- function(object, time, censored, select_clusters = FALSE) {
     
     # Adjust the legend and plot margins
     kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
-      theme(
+      ggplot2::theme(
         legend.position = "right",
         legend.box.margin = margin(0, 20, 0, 0),  # Adjust margin around legend box
         legend.key.size = unit(1, "cm"),           # Adjust size of legend keys
         legend.text = element_text(size = 10),     # Adjust size of legend text
         plot.margin = margin(10, 50, 10, 10)       # Adjust plot margins
       ) +
-      labs(
+      ggplot2::labs(
         title = paste("Cluster Distribution (", length(levels(cleaned_df$clust)), " clusters)"),
         subtitle = paste("p-value =", pval)
       )
