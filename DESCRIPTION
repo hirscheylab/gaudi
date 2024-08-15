@@ -24,12 +24,11 @@ Imports:
   clusterProfiler, 
   dbscan,
   dplyr,
-  enrichplot, 
   ggplot2,
+  org.Hs.eg.db, 
   patchwork,
   randomForest,
   SHAPforxgboost,
-  shiny, 
   survival, 
   survminer, 
   sva,
@@ -37,7 +36,6 @@ Imports:
   tidyr,
   uwot,
   vegan,
-  viridis, 
   xgboost
 Suggests:
   tidyverse

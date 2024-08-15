@@ -72,17 +72,17 @@ compute_distance <- function(centroid1, centroid2) {
 #'
 #' @param object A UBMIObject containing cluster data.
 #' @param time A named vector or data frame with a column named "time". 
-#' @param censored A named vector or data frame with a column named "censored". 
+#' @param censor A named vector or data frame with a column named "censor". 
 #' @param show_clusters A numeric list of which clusters to plot, by default 
 #' plots all the clusters (except noise, cluster 0). 
 #'
 #' @return A Kaplan-Meier plot, of ggplot2 type. 
 #' 
 #' @export
-plot_survival <- function(object, time, censored, show_clusters = NULL) {
+plot_survival <- function(object, time, censor, show_clusters = NULL) {
   
-  # Join UBMI object with time and censored into data frame
-  merged_df <- validate_and_merge_inputs(object, time, censored)
+  # Join UBMI object with time and censor into data frame
+  merged_df <- validate_and_merge_inputs(object, time, censor)
   
   # Filter out clusters with noise and remove NA values
   cleaned_df <- merged_df %>%
@@ -98,18 +98,21 @@ plot_survival <- function(object, time, censored, show_clusters = NULL) {
   cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
   
   # Perform survival analysis
-  model_event <- survival::survfit(survival::Surv(time, censored) ~ clust, data = cleaned_df)
+  model_event <- survival::survfit(survival::Surv(time, censor) ~ clust, data = cleaned_df)
   pval <- signif(survminer::surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
   
   # Generate Kaplan-Meier plot
   kaplan_meier_plot <- survminer::ggsurvplot(
     model_event,
-    palette = viridis::viridis(length(levels(cleaned_df$clust)), end = 0.8),
     surv.median.line = "hv",
     data = cleaned_df,
     legend.title = "Cluster",
     legend.labs = levels(cleaned_df$clust)
   )
+  
+  # Add viridis color scheme
+  kaplan_meier_plot$plot <- kaplan_meier_plot$plot + 
+    ggplot2::scale_color_viridis_d(end = 0.8)
   
   # Add title and subtitle to the plot
   kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
@@ -128,7 +131,7 @@ plot_survival <- function(object, time, censored, show_clusters = NULL) {
 #'
 #' @param object A UBMIObject containing cluster data.
 #' @param time A named vector or data frame with a column named "time". 
-#' @param censored A named vector or data frame with a column named "censored". 
+#' @param censor A named vector or data frame with a column named "censor". 
 #' 
 #' Centroids are calculated using median, quality is formed by a 80-20 split of 
 #' log p-value and scaled distance
@@ -143,10 +146,10 @@ plot_survival <- function(object, time, censored, show_clusters = NULL) {
 #' table <- get_pairwise_survival_data(ubmi_obj, time, censored)
 #' plot_survival(ubmi_obj, time, censored, table[["clusters"]][[1]])
 #' 
-get_pairwise_survival_data <- function(object, time, censored) {
+get_pairwise_survival_data <- function(object, time, censor) {
   
   # Join UBMI object with time and censored into data frame
-  merged_df <- validate_and_merge_inputs(object, time, censored)
+  merged_df <- validate_and_merge_inputs(object, time, censor)
   
   # Initialize variables
   results <- list()
@@ -173,7 +176,7 @@ get_pairwise_survival_data <- function(object, time, censored) {
     cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
     
     # Perform survival analysis
-    model_event <- survival::survfit(survival::Surv(time, censored) ~ clust, data = cleaned_df)
+    model_event <- survival::survfit(survival::Surv(time, censor) ~ clust, data = cleaned_df)
     pval <- signif(survminer::surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
     
     # Compute distance between the centroids of the selected clusters
