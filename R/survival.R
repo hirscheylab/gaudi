@@ -11,7 +11,7 @@ convert_to_df <- function(vec, name) {
 }
 
 # Function to check if inputs are correct and if so merge into one data frame
-validate_and_merge_inputs <- function(object, time, censored) {
+validate_and_merge_inputs <- function(object, time, censor) {
   
   # UBMI Object validation
   if (!inherits(object, "UBMIObject")) {
@@ -26,22 +26,22 @@ validate_and_merge_inputs <- function(object, time, censored) {
     if ("time" %in% colnames(time)) time else stop("time data frame should have a column named \"time\"")
   }
   
-  censored <- if (is.vector(censored)) convert_to_df(censored, "censored") else {
-    if ("censored" %in% colnames(censored)) censored else stop("censored data frame should have a column named \"censored\"")
+  censor <- if (is.vector(censor)) convert_to_df(censor, "censor") else {
+    if ("censor" %in% colnames(censor)) censor else stop("censor data frame should have a column named \"censor\"")
   }
   
   # Convert row names to columns
   clusters <- clusters %>% tibble::rownames_to_column(var = "names")
   time <- time %>% tibble::rownames_to_column(var = "names")
-  censored <- censored %>% tibble::rownames_to_column(var = "names")
+  censor <- censor %>% tibble::rownames_to_column(var = "names")
   
   time$time <- as.numeric(time$time)
-  censored$censored <- as.numeric(censored$censored)
+  censor$censor <- as.numeric(censor$censor)
   
   # Merge data frames
   merged_df <- clusters %>%
     dplyr::left_join(time %>% dplyr::select(names, time), by = "names") %>%
-    dplyr::left_join(censored %>% dplyr::select(names, censored), by = "names") %>% 
+    dplyr::left_join(censor %>% dplyr::select(names, censor), by = "names") %>% 
     tibble::column_to_rownames(var = "names")
   
   return(merged_df)
@@ -76,7 +76,7 @@ compute_distance <- function(centroid1, centroid2) {
 #' @param show_clusters A numeric list of which clusters to plot, by default 
 #' plots all the clusters (except noise, cluster 0). 
 #'
-#' @return A Kaplan-Meier plot, of ggplot2 type. 
+#' @return A Kaplan-Meier plot, of ggsurvplot type. 
 #' 
 #' @export
 plot_survival <- function(object, time, censor, show_clusters = NULL) {
