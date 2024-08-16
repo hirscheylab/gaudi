@@ -4,7 +4,7 @@
 #' 'clusterProfiler' package's Gene Set Enrichment Analysis (GSEA). 
 #'
 #' @param object An UBMIObject. 
-#' @param on_omics Numeric index indicating which omics dataset in the `object` to use for plotting.
+#' @param on_omics Numeric index indicating which omics dataset in the `object` to use for plotting. Names of metagenes here should be \strong{gene symbols}. 
 #' @param on_factor Numeric index indicating which factor from the multi-omics integration to use for plotting.
 #' @param organism Character string specifying the organism database. Default is "org.Hs.eg.db".
 #' @param ontology One of "BP", "MF", and "CC" subontologies, or "ALL" for all three
@@ -39,11 +39,11 @@ ubmi_enrichment <- function(object,
   gse <- clusterProfiler::gseGO(geneList = gene_list, 
                                 ont = ontology, 
                                 OrgDb = organism, 
-                                keyType = "SYMBOL", # should this be ENTREZID? 
+                                keyType = "SYMBOL", 
                                 minGSSize = minGSSize, 
                                 maxGSSize = maxGSSize, 
                                 pvalueCutoff = 1, 
-                                pAdjustMethod = "none" # default is BH
+                                pAdjustMethod = "none" 
                                 ) 
   
   return(gse@result)

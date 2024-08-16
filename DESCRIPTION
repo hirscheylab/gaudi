@@ -25,7 +25,6 @@ Imports:
   dbscan,
   dplyr,
   ggplot2,
-  org.Hs.eg.db, 
   patchwork,
   randomForest,
   SHAPforxgboost,
@@ -38,6 +37,7 @@ Imports:
   vegan,
   xgboost
 Suggests:
+  org.Hs.eg.db, 
   tidyverse
 License: GPL (>= 3)
 Encoding: UTF-8
