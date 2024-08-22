@@ -95,11 +95,11 @@ cubmi <- function(omics,
   
   comp1 <- comp1[,-1] %>% 
     as.matrix() %>% 
-    apply(., 1, median, na.rm = TRUE)
+    apply(., 1, median, na.rm = FALSE)
   
   comp2 <- comp2[,-1] %>% 
     as.matrix() %>% 
-    apply(., 1, median, na.rm = TRUE)
+    apply(., 1, median, na.rm = FALSE)
   
   message("Done!")
   
