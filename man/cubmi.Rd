@@ -58,6 +58,6 @@ Clustering is performed on the integrated data, and optionally, cluster 0 reassi
 \examples{
 omics_list <- list(data.frame(matrix(rnorm(200), ncol = 20)),
                    data.frame(matrix(rnorm(200), ncol = 20)))
-cubmi_result <- cubmi(omics_list, n_max = 3)
+cubmi_result <- cubmi(omics_list, n_max = 3, samples_in_rows = FALSE)
 
 }
