@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{plot_factors}
 \alias{plot_factors}
-\title{Plot UBMI Factors}
+\title{Plot GAUDI Factors}
 \usage{
 plot_factors(
   object,
@@ -13,7 +13,7 @@ plot_factors(
 )
 }
 \arguments{
-\item{object}{An \code{UBMIObject}.}
+\item{object}{A \code{GAUDIObject}.}
 
 \item{label_size}{Numeric value specifying the size of labels on the plot.
 A value of 0 means labels are not drawn.}
@@ -29,6 +29,6 @@ Supported palettes include 'inferno', 'plasma', and others from the viridis pack
 A ggplot object representing the factor plot.
 }
 \description{
-This function creates a plot of factors derived from UBMI.
+This function creates a plot of factors derived from GAUDI.
 It provides options to adjust label sizes, draw lines, and use ad-hoc labels for clustering.
 }

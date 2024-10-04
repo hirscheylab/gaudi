@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{plot_metagenes}
 \alias{plot_metagenes}
-\title{Plot UBMI Metagenes}
+\title{Plot GAUDI Metagenes}
 \usage{
 plot_metagenes(
   object,
@@ -13,7 +13,7 @@ plot_metagenes(
 )
 }
 \arguments{
-\item{object}{An \code{UBMIObject}.}
+\item{object}{A \code{GAUDIObject}.}
 
 \item{on_omics}{Numeric index indicating which omics dataset in the \code{object} to use for plotting.}
 
@@ -28,6 +28,6 @@ Supported palettes include 'inferno', 'plasma', and others from the viridis pack
 A ggplot object representing the metagenes plot with SHAP values.
 }
 \description{
-This function creates a plot of the top metagenes based on SHAP values derived from UBMI's feature importance analysis.
+This function creates a plot of the top metagenes based on SHAP values derived from GAUDI's feature importance analysis.
 It provides options to select which omics data and factor to use, the number of top features to display, and the color palette.
 }

@@ -101,9 +101,9 @@ xgboost_model <- function(x, y, xgboost_params = list()) {
 
 #' Drop Specified Clusters
 #'
-#' This function removes specified clusters from an `UBMIObject`.
+#' This function removes specified clusters from an `GAUDIObject`.
 #'
-#' @param object An `UBMIObject`.
+#' @param object A `GAUDIObject`.
 #' @param clusters A vector of cluster IDs (numeric or character) that should be removed from the object.
 #'                 Default is 0, which means it will remove the cluster(s) labeled as '0'.
 #'

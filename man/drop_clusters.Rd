@@ -7,7 +7,7 @@
 drop_clusters(object, clusters = 0)
 }
 \arguments{
-\item{object}{An \code{UBMIObject}.}
+\item{object}{A \code{GAUDIObject}.}
 
 \item{clusters}{A vector of cluster IDs (numeric or character) that should be removed from the object.
 Default is 0, which means it will remove the cluster(s) labeled as '0'.}
@@ -18,5 +18,5 @@ The function performs in-place modification but also returns the modified object
 If the object is not valid after modification, the function will not return it.
 }
 \description{
-This function removes specified clusters from an \code{UBMIObject}.
+This function removes specified clusters from an \code{GAUDIObject}.
 }

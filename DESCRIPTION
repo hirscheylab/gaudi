@@ -1,6 +1,6 @@
 Package: gaudi
 Title: Group Aggregation via UMAP Data Integration
-Version: 0.1.16
+Version: 0.1.17
 Authors@R: c(
     person(given = "Pol",
            family = "Castellano-Escuder",

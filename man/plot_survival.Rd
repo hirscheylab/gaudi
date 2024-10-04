@@ -7,7 +7,7 @@
 plot_survival(object, time, censor, show_clusters = NULL)
 }
 \arguments{
-\item{object}{A UBMIObject containing cluster data.}
+\item{object}{A \code{GAUDIObject} containing cluster data.}
 
 \item{time}{A named vector or data frame with a column named "time".}
 

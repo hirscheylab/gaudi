@@ -13,9 +13,9 @@ convert_to_df <- function(vec, name) {
 # Function to check if inputs are correct and if so merge into one data frame
 validate_and_merge_inputs <- function(object, time, censor) {
   
-  # UBMI Object validation
-  if (!inherits(object, "UBMIObject")) {
-    stop("The 'object' parameter must be of class 'UBMIObject'.")
+  # GAUDI Object validation
+  if (!inherits(object, "GAUDIObject")) {
+    stop("The 'object' parameter must be of class 'GAUDIObject'.")
   }
   
   # Extract clusters from the object
@@ -70,7 +70,7 @@ compute_distance <- function(centroid1, centroid2) {
 #' This function creates a Kaplan-Meier survival plot and allows the user to
 #' select which clusters to plot. 
 #'
-#' @param object A UBMIObject containing cluster data.
+#' @param object A `GAUDIObject` containing cluster data.
 #' @param time A named vector or data frame with a column named "time". 
 #' @param censor A named vector or data frame with a column named "censor". 
 #' @param show_clusters A numeric list of which clusters to plot, by default 
@@ -81,7 +81,7 @@ compute_distance <- function(centroid1, centroid2) {
 #' @export
 plot_survival <- function(object, time, censor, show_clusters = NULL) {
   
-  # Join UBMI object with time and censor into data frame
+  # Join GAUDI object with time and censor into data frame
   merged_df <- validate_and_merge_inputs(object, time, censor)
   
   # Filter out clusters with noise and remove NA values
@@ -127,9 +127,9 @@ plot_survival <- function(object, time, censor, show_clusters = NULL) {
 #' Kaplan-Meier Survival Summary Table
 #'
 #' This function provides information on pairwise comparisons between clusters
-#' of the UBMI object. 
+#' of the GAUDI object. 
 #'
-#' @param object A UBMIObject containing cluster data.
+#' @param object A `GAUDIObject` containing cluster data.
 #' @param time A named vector or data frame with a column named "time". 
 #' @param censor A named vector or data frame with a column named "censor". 
 #' 
@@ -137,18 +137,18 @@ plot_survival <- function(object, time, censor, show_clusters = NULL) {
 #' log p-value and scaled distance
 #'
 #' @return A data frame, with p-value of the survival comparison, distance 
-#' between clusters in the UBMI manifold, and quality, a non-interpretable 
+#' between clusters in the GAUDI manifold, and quality, a non-interpretable 
 #' metric to assist in prioritizing clusters to target. 
 #' 
 #' @export
 #' 
 #' @examples
-#' table <- get_pairwise_survival_data(ubmi_obj, time, censored)
-#' plot_survival(ubmi_obj, time, censored, table[["clusters"]][[1]])
+#' table <- get_pairwise_survival_data(object, time, censored)
+#' plot_survival(object, time, censored, table[["clusters"]][[1]])
 #' 
 get_pairwise_survival_data <- function(object, time, censor) {
   
-  # Join UBMI object with time and censored into data frame
+  # Join GAUDI object with time and censored into data frame
   merged_df <- validate_and_merge_inputs(object, time, censor)
   
   # Initialize variables

@@ -7,7 +7,7 @@
 get_pairwise_survival_data(object, time, censor)
 }
 \arguments{
-\item{object}{A UBMIObject containing cluster data.}
+\item{object}{A \code{GAUDIObject} containing cluster data.}
 
 \item{time}{A named vector or data frame with a column named "time".}
 
@@ -18,15 +18,15 @@ log p-value and scaled distance}
 }
 \value{
 A data frame, with p-value of the survival comparison, distance
-between clusters in the UBMI manifold, and quality, a non-interpretable
+between clusters in the GAUDI manifold, and quality, a non-interpretable
 metric to assist in prioritizing clusters to target.
 }
 \description{
 This function provides information on pairwise comparisons between clusters
-of the UBMI object.
+of the GAUDI object.
 }
 \examples{
-table <- get_pairwise_survival_data(ubmi_obj, time, censored)
-plot_survival(ubmi_obj, time, censored, table[["clusters"]][[1]])
+table <- get_pairwise_survival_data(object, time, censored)
+plot_survival(object, time, censored, table[["clusters"]][[1]])
 
 }

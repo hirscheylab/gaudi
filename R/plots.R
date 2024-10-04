@@ -1,10 +1,10 @@
 
-#' Plot UBMI Factors
+#' Plot GAUDI Factors
 #'
-#' This function creates a plot of factors derived from UBMI.
+#' This function creates a plot of factors derived from GAUDI.
 #' It provides options to adjust label sizes, draw lines, and use ad-hoc labels for clustering.
 #'
-#' @param object An `UBMIObject`.
+#' @param object A `GAUDIObject`.
 #' @param label_size Numeric value specifying the size of labels on the plot. 
 #'                   A value of 0 means labels are not drawn.
 #' @param draw_lines Logical value indicating whether to draw dashed lines at the median of UMAP coordinates.
@@ -55,12 +55,12 @@ plot_factors <- function(object,
   return(plot_complete)
 }
 
-#' Plot UBMI Metagenes
+#' Plot GAUDI Metagenes
 #'
-#' This function creates a plot of the top metagenes based on SHAP values derived from UBMI's feature importance analysis.
+#' This function creates a plot of the top metagenes based on SHAP values derived from GAUDI's feature importance analysis.
 #' It provides options to select which omics data and factor to use, the number of top features to display, and the color palette.
 #'
-#' @param object An `UBMIObject`.
+#' @param object A `GAUDIObject`.
 #' @param on_omics Numeric index indicating which omics dataset in the `object` to use for plotting.
 #' @param on_factor Numeric index indicating which factor from the multi-omics integration to use for plotting.
 #' @param top Integer specifying the number of top features to display in the plot.
@@ -107,12 +107,12 @@ plot_metagenes <- function(object,
   return(plot_complete)
 }
 
-#' Plot UBMI Grid with Factors and Metagenes
+#' Plot GAUDI Grid with Factors and Metagenes
 #'
-#' This function creates a comprehensive grid plot for the UBMI results. 
+#' This function creates a comprehensive grid plot for the GAUDI results. 
 #' It combines plots of factors and top metagenes associated with different dimensions of the manifold.
 #'
-#' @param object An `UBMIObject`.
+#' @param object A `GAUDIObject`.
 #' @param top_features Integer specifying the number of top features to display in the metagenes plots.
 #' @param on_omics Numeric index indicating which omics dataset in the `object` to use for plotting.
 #' @param label_size Numeric value specifying the size of labels on the factors plot.
@@ -123,13 +123,13 @@ plot_metagenes <- function(object,
 #' @return A patchwork grid plot combining the factors plot and two metagenes plots.
 #'
 #' @export
-plot_ubmi_grid <- function(object,
-                           top_features = 10,
-                           on_omics = 1,
-                           label_size = 4,
-                           draw_lines = TRUE,
-                           ad_hoc_label = NULL,
-                           annotations = TRUE) {
+plot_gaudi_grid <- function(object,
+                            top_features = 10,
+                            on_omics = 1,
+                            label_size = 4,
+                            draw_lines = TRUE,
+                            ad_hoc_label = NULL,
+                            annotations = TRUE) {
   
   factors_plot <- plot_factors(object, label_size = max(1, label_size), draw_lines = draw_lines, 
                                ad_hoc_label = ad_hoc_label, palette = "magma") +
