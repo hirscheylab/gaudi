@@ -1,29 +1,17 @@
-library(shiny)
-library(survival)
-library(survminer)
-library(dplyr)
-library(tidyr)
-library(viridis)
-library(tibble)
+# Helper function to validate and convert vectors to data frames
+convert_to_df <- function(vec, name) {
+  if (!is.null(names(vec))) {
+    return(data.frame(
+      names = names(vec),
+      !!name := as.numeric(vec),
+      stringsAsFactors = FALSE
+    ))
+  }
+  stop(paste(name, "must be a named vector or data frame with a column named", name))
+}
 
-#' Kaplan-Meier Survival Plots (Interactive)
-#'
-#' This function creates a Kaplan-Meier survival plot and allows the user to
-#' select which clusters to plot. 
-#'
-#' @param object A UBMIObject containing cluster data.
-#' @param Survival A named vector or data frame with a column named "Survival". 
-#' @param Death A named vector or data frame with a column named "Death". 
-#' @param select_clusters if TRUE, will open a Shiny window to allow the user to
-#' select which clusters they would like to plot
-#'
-#' @return A Kaplan-Meier plot, of ggplot2 type. 
-#' @export
-#'
-#' @examples
-#' analyze_survival(UBMI_object, survival_vector, death_vector)
-#' analyze_survival(UBMI_object, survival_data_frame, death_data_frame, select_clusters = TRUE)
-plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
+# Function to check if inputs are correct and if so merge into one data frame
+validate_and_merge_inputs <- function(object, time, censor) {
   
   # UBMI Object validation
   if (!inherits(object, "UBMIObject")) {
@@ -33,171 +21,203 @@ plot_survival <- function(object, Survival, Death, select_clusters = FALSE) {
   # Extract clusters from the object
   clusters <- object@factors[, "clust", drop = FALSE]
   
-  # Helper function to validate and convert vectors to data frames
-  convert_to_df <- function(vec, name) {
-    if (!is.null(names(vec))) {
-      return(data.frame(
-        names = names(vec),
-        !!name := as.numeric(vec),
-        stringsAsFactors = FALSE
-      ))
-    }
-    stop(paste(name, "must be a named vector or data frame with a column named", name))
-  }
-  
   # Input type validation and conversion
-  Survival <- if (is.vector(Survival)) convert_to_df(Survival, "Survival") else {
-    if ("Survival" %in% colnames(Survival)) Survival else stop("Survival data frame should have a column named \"Survival\"")
+  time <- if (is.vector(time)) convert_to_df(time, "time") else {
+    if ("time" %in% colnames(time)) time else stop("time data frame should have a column named \"time\"")
   }
   
-  Death <- if (is.vector(Death)) convert_to_df(Death, "Death") else {
-    if ("Death" %in% colnames(Death)) Death else stop("Death data frame should have a column named \"Death\"")
+  censor <- if (is.vector(censor)) convert_to_df(censor, "censor") else {
+    if ("censor" %in% colnames(censor)) censor else stop("censor data frame should have a column named \"censor\"")
   }
   
   # Convert row names to columns
-  clusters <- clusters %>% rownames_to_column(var = "names")
-  Survival <- Survival %>% rownames_to_column(var = "names")
-  Death <- Death %>% rownames_to_column(var = "names")
+  clusters <- clusters %>% tibble::rownames_to_column(var = "names")
+  time <- time %>% tibble::rownames_to_column(var = "names")
+  censor <- censor %>% tibble::rownames_to_column(var = "names")
   
-  Survival$Survival <- as.numeric(Survival$Survival)
-  Death$Death <- as.numeric(Death$Death)
+  time$time <- as.numeric(time$time)
+  censor$censor <- as.numeric(censor$censor)
   
   # Merge data frames
   merged_df <- clusters %>%
-    left_join(Survival %>% select(names, Survival), by = "names") %>%
-    left_join(Death %>% select(names, Death), by = "names") %>% 
-    column_to_rownames(var = "names")
+    dplyr::left_join(time %>% dplyr::select(names, time), by = "names") %>%
+    dplyr::left_join(censor %>% dplyr::select(names, censor), by = "names") %>% 
+    tibble::column_to_rownames(var = "names")
   
-  if (!select_clusters) {
+  return(merged_df)
+}
+
+# Function to compute centroids of clusters
+compute_centroids <- function(df) {
+  num_cols <- ncol(df) - 1  # Number of dimensions (excluding 'clust' column)
+  centroid_cols <- names(df)[1:num_cols]
+  
+  centroids <- df %>%
+    dplyr::group_by(clust) %>%
+    dplyr::summarise(across(all_of(centroid_cols), median, .names = "centroid_{col}"), .groups = 'drop')
+  
+  return(centroids)
+}
+
+# Function to compute the Euclidean distance between two centroids
+compute_distance <- function(centroid1, centroid2) {
+  distance <- sqrt(sum((centroid1 - centroid2)^2))
+  return(distance)
+}
+
+#' Kaplan-Meier Survival Plots
+#'
+#' This function creates a Kaplan-Meier survival plot and allows the user to
+#' select which clusters to plot. 
+#'
+#' @param object A UBMIObject containing cluster data.
+#' @param time A named vector or data frame with a column named "time". 
+#' @param censor A named vector or data frame with a column named "censor". 
+#' @param show_clusters A numeric list of which clusters to plot, by default 
+#' plots all the clusters (except noise, cluster 0). 
+#'
+#' @return A Kaplan-Meier plot, of ggsurvplot type. 
+#' 
+#' @export
+plot_survival <- function(object, time, censor, show_clusters = NULL) {
+  
+  # Join UBMI object with time and censor into data frame
+  merged_df <- validate_and_merge_inputs(object, time, censor)
+  
+  # Filter out clusters with noise and remove NA values
+  cleaned_df <- merged_df %>%
+    dplyr::filter(clust != 0) %>% 
+    tidyr::drop_na()
+  
+  # Filter for only selected clusters
+  if (!is.null(show_clusters)) {
+    cleaned_df <- dplyr::filter(cleaned_df, clust %in% show_clusters) 
+  }
+  
+  # Convert cluster to factor and sort levels
+  cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
+  
+  # Perform survival analysis
+  model_event <- survival::survfit(survival::Surv(time, censor) ~ clust, data = cleaned_df)
+  pval <- signif(survminer::surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
+  
+  # Generate Kaplan-Meier plot
+  kaplan_meier_plot <- survminer::ggsurvplot(
+    model_event,
+    surv.median.line = "hv",
+    data = cleaned_df,
+    legend.title = "Cluster",
+    legend.labs = levels(cleaned_df$clust)
+  )
+  
+  # Add viridis color scheme
+  kaplan_meier_plot$plot <- kaplan_meier_plot$plot + 
+    ggplot2::scale_color_viridis_d(end = 0.8)
+  
+  # Add title and subtitle to the plot
+  kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
+    ggplot2::labs(
+      title = paste("Cluster Distribution (", length(levels(cleaned_df$clust)), " clusters)"),
+      subtitle = paste("p-value =", pval)
+    )
+  
+  return(kaplan_meier_plot)
+}
+
+#' Kaplan-Meier Survival Summary Table
+#'
+#' This function provides information on pairwise comparisons between clusters
+#' of the UBMI object. 
+#'
+#' @param object A UBMIObject containing cluster data.
+#' @param time A named vector or data frame with a column named "time". 
+#' @param censor A named vector or data frame with a column named "censor". 
+#' 
+#' Centroids are calculated using median, quality is formed by a 80-20 split of 
+#' log p-value and scaled distance
+#'
+#' @return A data frame, with p-value of the survival comparison, distance 
+#' between clusters in the UBMI manifold, and quality, a non-interpretable 
+#' metric to assist in prioritizing clusters to target. 
+#' 
+#' @export
+#' 
+#' @examples
+#' table <- get_pairwise_survival_data(ubmi_obj, time, censored)
+#' plot_survival(ubmi_obj, time, censored, table[["clusters"]][[1]])
+#' 
+get_pairwise_survival_data <- function(object, time, censor) {
+  
+  # Join UBMI object with time and censored into data frame
+  merged_df <- validate_and_merge_inputs(object, time, censor)
+  
+  # Initialize variables
+  results <- list()
+  
+  all_clusters <- unique(object@factors$clust)
+  all_clusters <- all_clusters[all_clusters != 0]
+  
+  # Generate all possible pairs of clusters
+  all_pairs <- combn(all_clusters, 2, simplify = FALSE) %>% 
+    lapply(sort)
+  
+  # Calculate centroids for each cluster
+  centroids <- compute_centroids(object@factors)
+  
+  # Loop through all pairs and calculate survival analysis and distances
+  for (selected_clusters in all_pairs) {
     # Filter out clusters with noise and remove NA values
     cleaned_df <- merged_df %>%
       dplyr::filter(clust != 0) %>%
+      dplyr::filter(clust %in% selected_clusters) %>% 
       tidyr::drop_na()
     
     # Convert cluster to factor and sort levels
     cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
     
     # Perform survival analysis
-    model_event <- survfit(Surv(Survival, Death) ~ clust, data = cleaned_df)
-    pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
+    model_event <- survival::survfit(survival::Surv(time, censor) ~ clust, data = cleaned_df)
+    pval <- signif(survminer::surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
     
-    # Generate Kaplan-Meier plot
-    kaplan_meier_plot <- ggsurvplot(
-      model_event,
-      palette = viridis::viridis(length(levels(cleaned_df$clust)), end = 0.8),
-      surv.median.line = "hv",
-      data = cleaned_df,
-      legend.title = "Cluster",
-      legend.labs = levels(cleaned_df$clust)
+    # Compute distance between the centroids of the selected clusters
+    centroid1 <- centroids %>% 
+      dplyr::filter(clust == selected_clusters[1]) %>% 
+      dplyr::select(starts_with("centroid_"))
+    centroid2 <- centroids %>% 
+      dplyr::filter(clust == selected_clusters[2]) %>% 
+      dplyr::select(starts_with("centroid_"))
+    distance <- compute_distance(as.numeric(centroid1), as.numeric(centroid2))
+    
+    # Store the result in the list
+    results[[paste(selected_clusters, collapse = "_")]] <- list(
+      clusters = I(selected_clusters), 
+      pval = pval,
+      distance = distance
     )
-    
-    # Add title and subtitle to the plot
-    kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
-      labs(
-        title = paste("Cluster Distribution (", length(levels(cleaned_df$clust)), " clusters)"),
-        subtitle = paste("p-value =", pval)
-      )
-    
-    return(kaplan_meier_plot)
   }
   
-  # Determine the range of y-axis based on all clusters
-  full_data <- merged_df %>% dplyr::filter(clust %in% unique(clusters$clust))
-  full_model_event <- survfit(Surv(Survival, Death) ~ clust, data = full_data)
+  # Convert results to a data frame for easier manipulation
+  results_df <- lapply(results, function(x) tibble::tibble(clusters = list(x$clusters), pval = x$pval, distance = x$distance)) %>% 
+    dplyr::bind_rows(.id = "rowname") %>% 
+    tibble::column_to_rownames("rowname")
   
-  xlim <- range(full_model_event$time)  # Fix x-axis range
-  
-  interactive_survival <- function(merged_df, selected_clusters, xlim) {
-    
-    # Filter out clusters with noise and remove NA values
-    cleaned_df <- merged_df %>%
-      dplyr::filter(clust %in% selected_clusters) %>%
-      tidyr::drop_na()
-    
-    # Convert cluster to factor and sort levels
-    cleaned_df$clust <- factor(cleaned_df$clust, levels = sort(unique(cleaned_df$clust)))
-    
-    # Perform survival analysis
-    model_event <- survfit(Surv(Survival, Death) ~ clust, data = cleaned_df)
-    pval <- signif(surv_pvalue(model_event, data = cleaned_df)$pval, digits = 3)
-    
-    # Generate Kaplan-Meier plot with fixed plot size
-    kaplan_meier_plot <- ggsurvplot(
-      model_event,
-      palette = viridis::viridis(length(levels(cleaned_df$clust)), end = 0.8),
-      surv.median.line = "hv",
-      data = cleaned_df,
-      legend.title = "Cluster",
-      legend.labs = levels(cleaned_df$clust),
-      ylim = c(0, 1),  # Fix y-axis range
-      xlim = xlim
+  # Calculate quality metric
+  results_df <- results_df %>%
+    mutate(
+      scaled_distance = (distance - min(distance)) / (max(distance) - min(distance)),
+      n_log_p = log10(pval) / log10(min(pval)), # -log p_val divided by maximum -log p
+      quality = 0.8 * n_log_p + 0.2 * scaled_distance
     )
-    
-    # Adjust the legend and plot margins
-    kaplan_meier_plot$plot <- kaplan_meier_plot$plot +
-      theme(
-        legend.position = "right",
-        legend.box.margin = margin(0, 20, 0, 0),  # Adjust margin around legend box
-        legend.key.size = unit(1, "cm"),           # Adjust size of legend keys
-        legend.text = element_text(size = 10),     # Adjust size of legend text
-        plot.margin = margin(10, 50, 10, 10)       # Adjust plot margins
-      ) +
-      labs(
-        title = paste("Cluster Distribution (", length(levels(cleaned_df$clust)), " clusters)"),
-        subtitle = paste("p-value =", pval)
-      )
-    
-    return(kaplan_meier_plot)
-  }
   
-  
-  # Define UI for the application
-  ui <- fluidPage(
-    titlePanel("Interactive Kaplan-Meier Plot"),
-    
-    sidebarLayout(
-      sidebarPanel(
-        checkboxGroupInput("clusters", "Select Clusters:",
-                           choices = NULL, # Choices will be updated in server
-                           selected = NULL), 
-        actionButton(inputId = "close", label = "Save and Close")
-      ),
-      
-      mainPanel(
-        plotOutput("kmPlot")
-      )
+  results_df <- results_df %>% 
+    mutate(
+      scaled_distance = NULL, 
+      n_log_p = NULL
     )
-  )
   
-  # Define server logic
-  server <- function(input, output, session) {
-    
-    # Update the cluster choices based on data
-    observe({
-      clusters <- unique(object@factors$clust)
-      clusters <- clusters[clusters != 0]  # Exclude cluster 0
-      clusters <- sort(clusters)
-      updateCheckboxGroupInput(session, "clusters", choices = clusters, selected = clusters)
-    })
-    
-    output$kmPlot <- renderPlot({
-      req(input$clusters)  # Ensure at least one cluster is selected
-      
-      # Generate the plot based on selected clusters
-      plot <- interactive_survival(merged_df, input$clusters, xlim)
-      print(plot$plot)
-    })
-    
-    observeEvent(input$close, {
-      stopApp(input$clusters)
-    })
-  }
+  # Sort results by the quality metric
+  sorted_results <- results_df %>%
+    dplyr::arrange(desc(quality))
   
-  # Run the application
-  app <- shinyApp(ui = ui, server = server)
-  result <- runApp(app)
-  
-  plot <- interactive_survival(merged_df, result, xlim)
-  
-  return(plot$plot)
+  return (sorted_results)
 }

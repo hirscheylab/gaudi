@@ -21,12 +21,15 @@ Description:
     users looking to dive deeper into the world of multi-omics research.
 Imports:
   cluster,
+  clusterProfiler, 
   dbscan,
   dplyr,
   ggplot2,
   patchwork,
   randomForest,
   SHAPforxgboost,
+  survival, 
+  survminer, 
   sva,
   tibble,
   tidyr,
@@ -34,8 +37,9 @@ Imports:
   vegan,
   xgboost
 Suggests:
+  org.Hs.eg.db, 
   tidyverse
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2

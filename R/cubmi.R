@@ -26,7 +26,7 @@
 #' @examples
 #' omics_list <- list(data.frame(matrix(rnorm(200), ncol = 20)),
 #'                    data.frame(matrix(rnorm(200), ncol = 20)))
-#' cubmi_result <- cubmi(omics_list, n_max = 3)
+#' cubmi_result <- cubmi(omics_list, n_max = 3, samples_in_rows = FALSE)
 #'
 #' @export
 cubmi <- function(omics,
@@ -95,11 +95,11 @@ cubmi <- function(omics,
   
   comp1 <- comp1[,-1] %>% 
     as.matrix() %>% 
-    rowMedians()
+    apply(1, median, na.rm = TRUE)
   
   comp2 <- comp2[,-1] %>% 
     as.matrix() %>% 
-    rowMedians()
+    apply(1, median, na.rm = TRUE)
   
   message("Done!")
   
