@@ -21,3 +21,5 @@ devtools::install_github("hirscheylab/gaudi")
 For an in-depth understanding of the GAUDI (Group Aggregation via UMAP Data Integration) method's performance and its comparative analysis with other leading multi-omics integration techniques, we encourage users to explore our dedicated benchmarking repository. This repository contains detailed benchmarks across various datasets, including simulated data, TCGA cancer datasets, single-cell datasets, and DepMap multi-omics data, providing valuable insights into the effectiveness and versatility of the GAUDI approach. Access the comprehensive benchmarks and results [here](https://github.com/hirscheylab/umap_multiomics_integration).
 
 ## Citation
+
+Coming soon...
