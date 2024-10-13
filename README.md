@@ -22,4 +22,17 @@ For an in-depth understanding of the GAUDI (Group Aggregation via UMAP Data Inte
 
 ## Citation
 
-Coming soon...
+``` bibtex
+@article {Castellano-Escuder2024.10.07.617035,
+	author = {Castellano-Escuder, Pol and Zachman, Derek K and Han, Kevin and Hirschey, Matthew D},
+	title = {Interpretable multi-omics integration with UMAP embeddings and density-based clustering},
+	elocation-id = {2024.10.07.617035},
+	year = {2024},
+	doi = {10.1101/2024.10.07.617035},
+	publisher = {Cold Spring Harbor Laboratory},
+	URL = {https://www.biorxiv.org/content/early/2024/10/11/2024.10.07.617035},
+	eprint = {https://www.biorxiv.org/content/early/2024/10/11/2024.10.07.617035.full.pdf},
+	journal = {bioRxiv}
+}
+```
+
