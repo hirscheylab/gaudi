@@ -99,6 +99,30 @@ _Like most machine learning approaches, while these parameters provide robust pe
 
 For an in-depth understanding of the GAUDI (Group Aggregation via UMAP Data Integration) method's performance and its comparative analysis with other leading multi-omics integration techniques, we encourage users to explore our dedicated benchmarking repository. This repository contains detailed benchmarks across various datasets, including simulated data, TCGA cancer datasets, single-cell datasets, and DepMap multi-omics data, providing valuable insights into the effectiveness and versatility of the GAUDI approach. Access the comprehensive benchmarks and results [here](https://github.com/hirscheylab/umap_multiomics_integration).
 
+## System Requirements
+
+### Hardware requirements
+
+- `GAUDI` package requires only a standard computer with enough RAM to support the in-memory operations.
+- No specialized hardware required (GPU acceleration optional but not necessary)
+
+### OS Requirements
+
+This package has been tested on the following systems:
+
+- macOS: Sonoma (14.6.1)
+
+### Typical Install Time on a "Normal" Desktop Computer
+
+- Less than 5 minutes for installation of the main package
+- Up to 15 minutes if all dependencies need to be installed from scratch
+
+### Expected Run Time
+
+- Small-medium datasets: less than 30 seconds
+- Benchmarking examples with TCGA data: 5-10 minutes
+- Runtime scales with dataset size and dimensionality
+  
 ## License
 
 GAUDI is licensed under the GNU General Public License v3.0. See the [LICENSE file](https://github.com/hirscheylab/gaudi/blob/main/LICENSE.md) in the repository for details.
