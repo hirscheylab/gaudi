@@ -130,16 +130,16 @@ GAUDI is licensed under the GNU General Public License v3.0. See the [LICENSE fi
 ## Citation
 
 ``` bibtex
-@article {Castellano-Escuder2024.10.07.617035,
-	author = {Castellano-Escuder, Pol and Zachman, Derek K and Han, Kevin and Hirschey, Matthew D},
-	title = {Interpretable multi-omics integration with UMAP embeddings and density-based clustering},
-	elocation-id = {2024.10.07.617035},
-	year = {2024},
-	doi = {10.1101/2024.10.07.617035},
-	publisher = {Cold Spring Harbor Laboratory},
-	URL = {https://www.biorxiv.org/content/early/2024/10/11/2024.10.07.617035},
-	eprint = {https://www.biorxiv.org/content/early/2024/10/11/2024.10.07.617035.full.pdf},
-	journal = {bioRxiv}
+@article{castellano2025gaudi,
+  title={GAUDI: interpretable multi-omics integration with UMAP embeddings and density-based clustering},
+  author={Castellano-Escuder, Pol and Zachman, Derek K. and Han, Kevin and Hirschey, Matthew D.},
+  journal={Nature Communications},
+  volume={16},
+  pages={5771},
+  year={2025},
+  publisher={Nature Publishing Group},
+  doi={10.1038/s41467-025-60822-1},
+  url={https://doi.org/10.1038/s41467-025-60822-1}
 }
 ```
 
